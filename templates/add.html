@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#171B24">
+    <title>Добавить</title>
+    <link rel="stylesheet" href="/static/styles/add.css">
+</head>
+<body>
+    <div class="add-container">
+        <div class="header">
+            <h1>Новый сценарий</h1>
+            {{ if .scenario }}
+            <span class="status-badge">Черновик</span>
+            {{ end }}
+        </div>
+
+        <form class="scenario-form">
+            <div class="upload-section">
+                <div class="upload-box">
+                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 4l1-2h6l1 2h3a3 3 0 0 1 3 3v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a3 3 0 0 1 3-3Z"/><circle cx="12" cy="12" r="4"/></svg>
+                    <span>Изображение</span>
+                </div>
+                <div class="upload-box">
+                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="1" y="4" width="16" height="17" rx="3"/><path d="m17 9 6-4v15l-6-4Z"/></svg>
+                    <span>Видео</span>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <div class="form-group">
+                    <label>Название сценария</label>
+                    <input type="text" value="{{ .scenario.Name }}" placeholder="Введите название">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ёмкость аккумулятора, мА*ч</label>
+                        <input type="number" value="{{ .scenario.BatteryCapacity }}" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Текущий заряд, %</label>
+                        <input type="number" value="{{ .scenario.CurrentCharge }}" placeholder="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Время автономной работы, ч</label>
+                    <input type="number" step="0.1" value="{{ .scenario.WorkTime }}" placeholder="0">
+                </div>
+            </div>
+
+            <div class="form-group description-group">
+                <label>Описание</label>
+                <textarea placeholder="Введите описание">{{ .scenario.Description }}</textarea>
+            </div>
+
+        </form>
+
+        <nav class="bottom-tab-bar">
+            <div class="tabs">
+                <a href="/" class="tab">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <polygon points="10,8 16,12 10,16"/>
+                    </svg>
+                    <span>Лента</span>
+                </a>
+                <a href="/add" class="tab active">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    <span>Добавить</span>
+                </a>
+                <a href="/scenarios" class="tab">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.5">
+                        <rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 2v3h6V2"/>
+                    </svg>
+                    <span>Сценарии</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#171B24">
+    <title>Лента</title>
+    <link rel="stylesheet" href="/static/styles/feed.css">
+</head>
+<body>
+    <div class="feed-container">
+        <div class="video-background">
+            <video autoplay muted loop playsinline class="bg-video">
+                <source src="{{ .scenario.VideoURL }}" type="video/mp4">
+            </video>
+        </div>
+
+        <div class="actions-sidebar">
+            <div class="like-btn">
+                <svg width="32" height="27" viewBox="0 0 32 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2.4522 4.52586C1.50639 5.87301 1.00003 7.46949 1 9.10444C1 12.4836 3.24999 14.9813 5.49999 17.1851L13.762 25.019C14.0455 25.33 14.3933 25.5782 14.7824 25.7474C15.1714 25.9165 15.5928 26.0026 16.0184 25.9999C16.444 25.9973 16.8642 25.906 17.251 25.732C17.6378 25.5581 17.9825 25.3055 18.2619 24.9911L26.4999 17.1851C28.7499 14.9813 30.9999 12.469 30.9999 9.10444C31.0079 7.46591 30.5062 5.86386 29.5616 4.51152C28.617 3.15917 27.2743 2.12068 25.7122 1.53426C24.1502 0.947843 22.4428 0.841308 20.8174 1.22884C19.192 1.61637 17.7256 2.47958 16.6135 3.70359C16.5349 3.78589 16.4399 3.8515 16.3343 3.89635C16.2288 3.94121 16.115 3.96435 16 3.96435C15.8849 3.96435 15.7711 3.94121 15.6656 3.89635C15.56 3.8515 15.465 3.78589 15.3865 3.70359C14.2708 2.48749 12.8048 1.63147 11.182 1.24859C9.55921 0.86571 7.85603 0.973986 6.2974 1.55912C4.73876 2.14425 3.398 3.1787 2.4522 4.52586Z" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="likes-count">{{ .likes }}</span>
+            </div>
+            <a href="/feed/{{ .scenario.ID }}?next=true" class="next-btn">
+                <svg width="35" height="35" viewBox="0 0 35 35" fill="none" stroke="var(--color-foreground-strong)" stroke-width="2">
+                    
+                    <path d="M17.5 7.3v20.4M7.3 17.5l10.2 10.2 10.2-10.2"/>
+                </svg>
+            </a>
+        </div>
+
+        <div class="content-overlay">
+            <div class="content-card">
+                <h2 class="scenario-title">{{ .scenario.Name }}</h2>
+                <p class="scenario-description">{{ .scenario.Description }}</p>
+                <a href="/add?id={{ .scenario.ID }}" class="details-link">
+                    <span>Подробнее</span>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M5.25 3.5L8.75 7L5.25 10.5"/>
+                    </svg>
+                </a>
+            </div>
+            <div class="tags">
+                <span class="tag">Ёмкость = {{ .scenario.BatteryCapacity }} мА*ч</span>
+                <span class="tag">Сценарий = {{ .scenario.ScenarioType }}</span>
+            </div>
+        </div>
+
+        <nav class="bottom-tab-bar">
+            <div class="tabs">
+                <a href="/" class="tab active">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <polygon points="10,8 16,12 10,16"/>
+                    </svg>
+                    <span>Лента</span>
+                </a>
+                <a href="/add" class="tab">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    <span>Добавить</span>
+                </a>
+                <a href="/scenarios" class="tab">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.5">
+                        <rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 2v3h6V2"/>
+                    </svg>
+                    <span>Сценарии</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+</body>
+</html>
