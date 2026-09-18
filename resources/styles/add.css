@@ -14,8 +14,8 @@
 }
 
 .status-badge {
-    background: var(--color-surface-input);
-    color: var(--color-accent);
+    background: var(--input-fields-color);
+    color: var(--accent-color);
     padding: 4px 8px;
     border-radius: 10px;
     font-size: 12px;
@@ -28,8 +28,8 @@
 }
 
 .form-card {
-    background: var(--color-surface-description);
-    border: 1px solid var(--color-border);
+    background: var(--section-color);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 18px 16px;
     display: flex;
@@ -39,7 +39,7 @@
 
 .form-card,
 .upload-box {
-    box-shadow: 0 0 8px 1px var(--color-surface-subtle), 0 0 48px var(--color-shadow-soft);
+    box-shadow: 0 0 14px 2px var(--main-color)
 }
 
 .form-group label {
@@ -47,7 +47,7 @@
     font-size: 13px;
     line-height: 16px;
     font-weight: 700;
-    color: var(--color-text-label);
+    color: var(--muted-labels-color);
     margin-bottom: 4px;
 }
 
@@ -55,11 +55,11 @@
     display: block;
     width: 100%;
     height: 36px;
-    background: var(--color-surface-input);
-    border: 1px solid var(--color-border);
+    background: var(--input-fields-color);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 0 10px;
-    color: var(--color-text-primary);
+    color: var(--primary-text-color);
     font: 400 14px/17px Inter, sans-serif;
 }
 
@@ -80,12 +80,12 @@
 }
 
 .description-group textarea {
-    color: var(--color-text-primary);
+    color: var(--primary-text-color);
 }
 
 .form-group textarea {
     height: 62px;
-    background: var(--color-surface-description);
+    background: var(--section-color);
     padding: 12px 15px;
     border-radius: 10px;
     resize: vertical;
@@ -100,9 +100,9 @@
 .upload-box {
     flex: 1;
     height: 88px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
-    background: linear-gradient(250deg, var(--color-surface-highlight), transparent), var(--color-background-page);
+    background: linear-gradient(250deg, rgba(255, 255, 255, 0.025), transparent), var(--main-color);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -113,14 +113,14 @@
 .upload-box svg {
     width: 23px;
     height: 23px;
-    stroke: var(--color-text-muted);
+    stroke: var(--muted-text-color);
     stroke-width: 2;
 }
 
 .upload-box span {
     font-size: 12px;
     font-weight: 500;
-    color: var(--color-text-muted);
+    color: var(--muted-text-color);
     line-height: 15px;
 }
 
