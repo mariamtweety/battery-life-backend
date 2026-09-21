@@ -4,13 +4,14 @@
     overflow: hidden;
     min-height: 700px;
     height: 100vh;
+    height: 100dvh;
     color: var(--primary-text-color);
 }
 
 .video-background {
     position: absolute;
     inset: 0;
-    z-index: -2;
+    z-index: 0;
 }
 
 .bg-video {
@@ -21,31 +22,9 @@
 
 
 
-.brand-title {
-    position: absolute;
-    top: 22px;
-    left: 25px;
-}
-
-.brand-main {
-    font-size: 18px;
-    font-weight: 800;
-    line-height: 22px;
-    margin-top: 20px;
-}
-
-.brand-sub {
-    display: block;
-    margin-top: 2px;
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 12px;
-    color: var(--accent-color);
-}
-
 .actions-sidebar {
     position: absolute;
-    right: 27px;
+    right: 25px;
     top: 49.18%;
     width: 40px;
     display: flex;
@@ -81,41 +60,42 @@
     bottom: 80px;
     left: 0;
     width: 100%;
-    padding: 20px 25px 25px;
+    padding: 20px 25px 33px;
 }
 
 .content-card {
-    margin-bottom: 18px;
+    margin-bottom: 14px;
 }
 
 .scenario-title {
     font-size: 24px;
     font-weight: 700;
     line-height: 29px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .scenario-description {
     font-size: 14px;
     line-height: 20px;
     color: var(--muted-text-color);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .tags {
     display: flex;
     flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 8px;
 }
 
 .tag {
-    background: var(--accent-color);
+    background: rgba(14, 165, 233, .8);
     color: var(--main-color);
-    padding: 7px 12px;
+    padding: 7.5px 12px;
     border-radius: 10px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
-    line-height: 14px;
+    line-height: 13px;
 }
 
 .details-link {
@@ -133,3 +113,21 @@
 .details-link span {
     width: 81px;
 }
+
+.scenario-title, .actions-sidebar { color: white; }
+.scenario-description { color: #C1C5C4; }
+.description-more { color: #999; text-decoration: none; white-space: nowrap; }
+.bg-video { background: var(--background-color); }
+
+/* Match the full-width Figma fade without browser clipping of a large shadow. */
+.feed-container::before {
+    position: absolute;
+    inset: 0;
+    transform: none;
+    height: 100%;
+    box-shadow: none;
+    clip-path: none;
+    background: linear-gradient(to bottom, transparent 42%, #0F1117 92%);
+    z-index: 1;
+}
+.content-overlay, .actions-sidebar { z-index: 2; }

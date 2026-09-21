@@ -101,6 +101,15 @@ func (h *Handler) GetScenariosList(ctx *gin.Context) {
 	filterStr := strings.TrimSpace(ctx.Query("filter"))
 	scenarios, err := h.Repository.GetPublishedScenarios()
 	query := strings.ToLower(filterStr)
+	maxHours := 17
+	if raw, present := ctx.GetQuery("max_hours"); present {
+		parsed, parseErr := strconv.Atoi(raw)
+		if parseErr != nil || parsed < 0 || parsed > 24 {
+			ctx.HTML(http.StatusBadRequest, "error.html", gin.H{"error": "Время должно быть от 0 до 24 часов"})
+			return
+		}
+		maxHours = parsed
+	}
 
 	if err != nil {
 		logrus.Error(err)
@@ -113,7 +122,7 @@ func (h *Handler) GetScenariosList(ctx *gin.Context) {
 
 	var result []ScenarioWithLikes
 	for _, s := range scenarios {
-		if !strings.Contains(strings.ToLower(s.Name), query) {
+		if s.WorkTime > float64(maxHours) || !strings.Contains(strings.ToLower(s.Name), query) {
 			continue
 		}
 		result = append(result, ScenarioWithLikes{
@@ -125,5 +134,6 @@ func (h *Handler) GetScenariosList(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "scenarios.html", gin.H{
 		"scenarios": result,
 		"filter":    filterStr,
+		"maxHours":  maxHours,
 	})
 }

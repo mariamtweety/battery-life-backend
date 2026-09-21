@@ -17,6 +17,7 @@
         </div>
 
         <form class="scenario-form">
+            <span class="media-label">Медиа</span>
             <div class="upload-section">
                 <div class="upload-box">
                     <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 4l1-2h6l1 2h3a3 3 0 0 1 3 3v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a3 3 0 0 1 3-3Z"/><circle cx="12" cy="12" r="4"/></svg>
@@ -30,30 +31,24 @@
 
             <div class="form-card">
                 <div class="form-group">
-                    <label>Название сценария</label>
-                    <input type="text" value="{{ .scenario.Name }}" placeholder="Введите название">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Ёмкость аккумулятора, мА*ч</label>
-                        <input type="number" value="{{ .scenario.BatteryCapacity }}" placeholder="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Текущий заряд, %</label>
-                        <input type="number" value="{{ .scenario.CurrentCharge }}" placeholder="0">
-                    </div>
+                    <label for="scenario-name">Название сценария</label>
+                    <input id="scenario-name" type="text" value="{{ .scenario.Name }}" placeholder="Введите название">
                 </div>
 
                 <div class="form-group">
-                    <label>Время автономной работы, ч</label>
-                    <input type="number" step="0.1" value="{{ .scenario.WorkTime }}" placeholder="0">
+                    <label for="consumption">Расход заряда, мА*ч / ч</label>
+                    <input id="consumption" type="number" min="0" value="{{ .scenario.ChargeConsumption }}" placeholder="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="work-time">Среднее время использования, ч</label>
+                    <input id="work-time" type="number" min="0" step="0.1" value="{{ .scenario.WorkTime }}" placeholder="0">
                 </div>
             </div>
 
             <div class="form-group description-group">
-                <label>Описание</label>
-                <textarea placeholder="Введите описание">{{ .scenario.Description }}</textarea>
+                <label for="description">Описание</label>
+                <textarea id="description" placeholder="Введите описание">{{ .scenario.Description }}</textarea>
             </div>
 
         </form>

@@ -9,15 +9,16 @@
 </head>
 <body>
     <div class="scenarios-container">
-        <div class="search-bar">
-            <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--color-text-muted)" stroke-width="2">
-                <circle cx="8" cy="8" r="6"/>
-                <line x1="13" y1="13" x2="18" y2="18"/>
-            </svg>
-            <form action="/scenarios" method="GET" class="search-form">
-                <input type="search" name="filter" value="{{ .filter }}" placeholder="Поиск по названию..." aria-label="Поиск по названию сценария" enterkeyhint="search" class="search-input">
-            </form>
-        </div>
+        <form action="/scenarios" method="GET" class="time-filter">
+            <label for="max-hours">Среднее время использования не более, ч</label>
+            <div class="filter-controls">
+                <div class="range-field">
+                    <div class="range-labels"><span>0</span><span>24</span></div>
+                    <input id="max-hours" type="range" name="max_hours" min="0" max="24" step="1" value="{{ .maxHours }}" aria-label="Максимальное время использования, часы">
+                </div>
+                <button type="submit">Искать</button>
+            </div>
+        </form>
 
         <div class="scenarios-grid">
             {{ range .scenarios }}

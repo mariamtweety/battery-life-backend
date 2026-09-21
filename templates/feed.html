@@ -22,7 +22,7 @@
                 </svg>
                 <span class="likes-count">{{ .likes }}</span>
             </div>
-            <a href="/feed/{{ .scenario.ID }}?next=true" class="next-btn">
+            <a href="/feed/{{ .scenario.ID }}?next=true" class="next-btn" aria-label="Следующий сценарий">
                 <svg width="35" height="35" viewBox="0 0 35 35" fill="none" stroke="var(--primary-text-color)" stroke-width="2">
                     
                     <path d="M17.5 7.3v20.4M7.3 17.5l10.2 10.2 10.2-10.2"/>
@@ -33,7 +33,7 @@
         <div class="content-overlay">
             <div class="content-card">
                 <h2 class="scenario-title">{{ .scenario.Name }}</h2>
-                <p class="scenario-description">{{ .scenario.Description }}</p>
+                <p class="scenario-description">{{ .scenario.Description }}<a class="description-more" href="/add?id={{ .scenario.ID }}">... ещё</a></p>
                 <a href="/add?id={{ .scenario.ID }}" class="details-link">
                     <span>Подробнее</span>
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -42,8 +42,8 @@
                 </a>
             </div>
             <div class="tags">
-                <span class="tag">Ёмкость = {{ .scenario.BatteryCapacity }} мА*ч</span>
-                <span class="tag">Сценарий = {{ .scenario.ScenarioType }}</span>
+                <span class="tag">Расход = {{ .scenario.ChargeConsumption }} мА</span>
+                <span class="tag">Время использования = {{ .scenario.WorkTime }} ч</span>
             </div>
         </div>
 
