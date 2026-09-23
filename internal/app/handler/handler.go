@@ -18,19 +18,16 @@ func NewHandler(r *repository.Repository) *Handler {
 }
 
 func (h *Handler) RegisterHandler(router *gin.Engine) {
-	// 3 GET метода
 	router.GET("/", h.GetFeedDefault)
 	router.GET("/feed/:id", h.GetFeed)
 	router.GET("/add", h.GetDraftScenario)
 	router.GET("/scenarios", h.GetScenariosList)
 
-	// POST методы через ORM
 	router.POST("/add", h.CreateDraftScenario)
 	router.POST("/scenarios/create", h.CreateDraftScenario)
 	router.POST("/add/publish", h.PublishScenario)
 	router.POST("/scenarios/:id/publish", h.PublishScenario)
 
-	// POST метод логического удаления через SQL UPDATE (без ORM)
 	router.POST("/scenarios/delete", h.DeleteScenario)
 	router.POST("/delete-scenario", h.DeleteScenario)
 }

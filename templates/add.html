@@ -21,7 +21,6 @@
             <input type="hidden" name="scenario_id" value="{{ .scenario.ID }}">
             {{ end }}
 
-            <!-- 1 & 2: Поля для фото и видео -->
             <span class="media-label">Медиа</span>
             <div class="upload-section">
                 <label class="upload-box {{ if and .scenario .scenario.ImageURL }}active{{ end }}">
@@ -36,7 +35,6 @@
                 </label>
             </div>
 
-            <!-- 3: Поле для названия -->
             <div class="form-card">
                 <div class="form-group">
                     <label for="scenario-name">Название сценария (до 24 символов)</label>
@@ -47,7 +45,6 @@
                 </div>
 
                 {{ if .has_draft }}
-                <!-- Поля по теме (отображаются только при публикации черновика) -->
                 <div class="form-group">
                     <label for="consumption">Расход заряда, мА*ч / ч (от 1 до 9999)</label>
                     <input id="consumption" name="battery_drain_mah" type="number" min="1" max="9999" step="1" value="{{ if and .scenario (gt .scenario.BatteryDrainMah 0) }}{{ .scenario.BatteryDrainMah }}{{ end }}" placeholder="от 1 до 9999" required>
@@ -61,7 +58,6 @@
             </div>
 
             {{ if .has_draft }}
-            <!-- Краткая информация / описание (отображается только при публикации черновика) -->
             <div class="form-group description-group">
                 <label for="description">Описание (до 400 символов)</label>
                 <textarea id="description" name="scenario_description" minlength="1" maxlength="400" placeholder="Введите краткое описание" required>{{ if .scenario }}{{ .scenario.ScenarioDescription }}{{ end }}</textarea>

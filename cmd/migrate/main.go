@@ -32,27 +32,23 @@ func main() {
 		log.Fatalf("cant migrate db: %v", err)
 	}
 
-	// Уникальный индекс: не более одного черновика на пользователя
 	err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS uq_user_single_draft ON battery_scenarios (created_by_user_id) WHERE scenario_status = 'draft';").Error
 	if err != nil {
 		log.Fatalf("cant create draft unique index: %v", err)
 	}
 
-	// Ограничение на расход заряда (0 до 9999 мА*ч)
 	_ = db.Exec("ALTER TABLE battery_scenarios DROP CONSTRAINT IF EXISTS chk_battery_drain_mah;")
 	err = db.Exec("ALTER TABLE battery_scenarios ADD CONSTRAINT chk_battery_drain_mah CHECK (battery_drain_mah >= 0 AND battery_drain_mah <= 9999);").Error
 	if err != nil {
 		log.Fatalf("cant create battery_drain_mah check constraint: %v", err)
 	}
 
-	// Ограничение на длину названия сценария (до 24 символов)
 	_ = db.Exec("ALTER TABLE battery_scenarios DROP CONSTRAINT IF EXISTS chk_scenario_title_len;")
 	err = db.Exec("ALTER TABLE battery_scenarios ADD CONSTRAINT chk_scenario_title_len CHECK (length(trim(scenario_title)) >= 1 AND length(scenario_title) <= 24);").Error
 	if err != nil {
 		log.Fatalf("cant create chk_scenario_title_len check constraint: %v", err)
 	}
 
-	// Ограничение на длину описания сценария (до 1000 символов)
 	_ = db.Exec("ALTER TABLE battery_scenarios DROP CONSTRAINT IF EXISTS chk_battery_scenarios_scenario_description;")
 	_ = db.Exec("ALTER TABLE battery_scenarios DROP CONSTRAINT IF EXISTS chk_scenario_description_len;")
 	err = db.Exec("ALTER TABLE battery_scenarios ADD CONSTRAINT chk_scenario_description_len CHECK (length(scenario_description) <= 1000);").Error
@@ -199,7 +195,6 @@ func seedData(db *gorm.DB) {
 			db.Create(&s)
 		}
 
-		// Обновляем sequence для id в postgres
 		db.Exec("SELECT setval('battery_scenarios_id_seq', (SELECT MAX(id) FROM battery_scenarios));")
 		db.Exec("SELECT setval('phone_users_id_seq', (SELECT MAX(id) FROM phone_users));")
 	}

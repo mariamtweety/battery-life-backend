@@ -159,7 +159,6 @@
 .scenario-description { color: #C1C5C4; }
 .bg-video { background: var(--background-color); }
 
-/* Match the full-width Figma fade without browser clipping of a large shadow. */
 .feed-container::before {
     position: absolute;
     inset: 0;

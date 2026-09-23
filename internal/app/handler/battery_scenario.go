@@ -14,7 +14,6 @@ import (
 
 const defaultUserID = 1
 
-// GetFeed отображает сценарий в ленте по ID (или следующий при ?next=true)
 func (h *Handler) GetFeed(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -42,7 +41,6 @@ func (h *Handler) GetFeed(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "feed.html", buildFeedData(scenario, likesCount))
 }
 
-// GetFeedDefault отображает первый опубликованный сценарий
 func (h *Handler) GetFeedDefault(ctx *gin.Context) {
 	scenario, err := h.Repository.GetFirstPublishedScenario()
 	if err != nil || scenario == nil {
@@ -73,9 +71,7 @@ func buildFeedData(scenario *ds.BatteryScenario, likes int64) gin.H {
 	return data
 }
 
-// GetDraftScenario отображает страницу добавления / публикации черновика
 func (h *Handler) GetDraftScenario(ctx *gin.Context) {
-	// Поддержка перехода "Подробнее" из ленты по id
 	if idStr, selected := ctx.GetQuery("id"); selected {
 		id, err := strconv.Atoi(idStr)
 		if err != nil || id <= 0 {
@@ -107,7 +103,6 @@ func (h *Handler) GetDraftScenario(ctx *gin.Context) {
 	})
 }
 
-// CreateDraftScenario создает новую карточку сценария (черновик) через ORM
 func (h *Handler) CreateDraftScenario(ctx *gin.Context) {
 	title := strings.TrimSpace(ctx.PostForm("scenario_title"))
 	titleLen := utf8.RuneCountInString(title)
@@ -121,7 +116,6 @@ func (h *Handler) CreateDraftScenario(ctx *gin.Context) {
 		logrus.Errorf("CreateDraftScenario: ошибка проверки существующего черновика: %v", err)
 	}
 	if existingDraft != nil {
-		// У пользователя уже есть черновик - перенаправляем на страницу добавления
 		ctx.Redirect(http.StatusFound, "/add")
 		return
 	}
@@ -150,7 +144,6 @@ func (h *Handler) CreateDraftScenario(ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, "/add")
 }
 
-// PublishScenario публикует карточку (смена статуса черновика на опубликован) через ORM
 func (h *Handler) PublishScenario(ctx *gin.Context) {
 	idStr := ctx.PostForm("scenario_id")
 	if idStr == "" {
@@ -192,7 +185,6 @@ func (h *Handler) PublishScenario(ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, "/scenarios")
 }
 
-// GetScenariosList отображает плитку опубликованных карточек с поиском и фильтром
 func (h *Handler) GetScenariosList(ctx *gin.Context) {
 	filterStr := strings.TrimSpace(ctx.Query("filter"))
 	maxHours := 24.0
@@ -217,7 +209,6 @@ func (h *Handler) GetScenariosList(ctx *gin.Context) {
 	})
 }
 
-// DeleteScenario выполняет логическое удаление карточки через SQL UPDATE без ORM
 func (h *Handler) DeleteScenario(ctx *gin.Context) {
 	idStr := ctx.PostForm("scenario_id")
 	id, err := strconv.Atoi(idStr)
@@ -227,7 +218,6 @@ func (h *Handler) DeleteScenario(ctx *gin.Context) {
 		return
 	}
 
-	// Вызов логического удаления через SQL запрос UPDATE (без ORM)
 	err = h.Repository.DeleteScenarioSQL(uint(id))
 	if err != nil {
 		logrus.Errorf("DeleteScenario: ошибка SQL UPDATE: %v", err)

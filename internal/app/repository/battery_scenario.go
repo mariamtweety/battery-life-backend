@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetPublishedScenarios возвращает все опубликованные сценарии через ORM
 func (r *Repository) GetPublishedScenarios() ([]ds.BatteryScenario, error) {
 	var scenarios []ds.BatteryScenario
 	err := r.db.Where("scenario_status = ?", "published").Order("id ASC").Find(&scenarios).Error
@@ -20,7 +19,6 @@ func (r *Repository) GetPublishedScenarios() ([]ds.BatteryScenario, error) {
 	return scenarios, nil
 }
 
-// GetFirstPublishedScenario возвращает первый опубликованный сценарий для ленты
 func (r *Repository) GetFirstPublishedScenario() (*ds.BatteryScenario, error) {
 	var scenario ds.BatteryScenario
 	err := r.db.Where("scenario_status = ?", "published").Order("id ASC").First(&scenario).Error
@@ -30,7 +28,6 @@ func (r *Repository) GetFirstPublishedScenario() (*ds.BatteryScenario, error) {
 	return &scenario, nil
 }
 
-// GetScenarioByID возвращает опубликованный сценарий по ID. Удаленные и черновики не возвращаются.
 func (r *Repository) GetScenarioByID(id uint) (*ds.BatteryScenario, error) {
 	var scenario ds.BatteryScenario
 	err := r.db.Where("id = ? AND scenario_status = ?", id, "published").First(&scenario).Error
@@ -40,7 +37,6 @@ func (r *Repository) GetScenarioByID(id uint) (*ds.BatteryScenario, error) {
 	return &scenario, nil
 }
 
-// GetNextPublishedScenario возвращает следующий опубликованный сценарий после currentID
 func (r *Repository) GetNextPublishedScenario(currentID uint) (*ds.BatteryScenario, error) {
 	var scenario ds.BatteryScenario
 	err := r.db.Where("id > ? AND scenario_status = ?", currentID, "published").Order("id ASC").First(&scenario).Error
@@ -53,7 +49,6 @@ func (r *Repository) GetNextPublishedScenario(currentID uint) (*ds.BatteryScenar
 	return nil, err
 }
 
-// GetDraftScenarioByUserID возвращает черновик пользователя через ORM
 func (r *Repository) GetDraftScenarioByUserID(userID uint) (*ds.BatteryScenario, error) {
 	var scenario ds.BatteryScenario
 	err := r.db.Where("created_by_user_id = ? AND scenario_status = ?", userID, "draft").First(&scenario).Error
@@ -66,7 +61,6 @@ func (r *Repository) GetDraftScenarioByUserID(userID uint) (*ds.BatteryScenario,
 	return &scenario, nil
 }
 
-// CreateDraftScenario создает черновик сценария через ORM
 func (r *Repository) CreateDraftScenario(scenario *ds.BatteryScenario) error {
 	scenario.ScenarioStatus = "draft"
 	scenario.CreatedAt = time.Now()
@@ -74,7 +68,6 @@ func (r *Repository) CreateDraftScenario(scenario *ds.BatteryScenario) error {
 	return r.db.Create(scenario).Error
 }
 
-// PublishScenario публикует сценарий (смена статуса на published) через ORM
 func (r *Repository) PublishScenario(id uint, description string, drainMah int, durationHours float64) error {
 	now := time.Now()
 	updates := map[string]interface{}{
@@ -94,7 +87,6 @@ func (r *Repository) PublishScenario(id uint, description string, drainMah int, 
 	return nil
 }
 
-// GetLikesCount возвращает количество лайков для сценария из m-m таблицы через ORM
 func (r *Repository) GetLikesCount(scenarioID uint) int64 {
 	var count int64
 	err := r.db.Model(&ds.ScenarioLike{}).Where("scenario_id = ?", scenarioID).Count(&count).Error
@@ -104,7 +96,6 @@ func (r *Repository) GetLikesCount(scenarioID uint) int64 {
 	return count
 }
 
-// GetScenariosWithLikes возвращает список опубликованных сценариев с лайками и фильтрацией
 func (r *Repository) GetScenariosWithLikes(nameFilter string, maxHours float64) ([]ScenarioWithLikes, error) {
 	query := r.db.Model(&ds.BatteryScenario{}).Where("scenario_status = ?", "published")
 
@@ -132,15 +123,31 @@ func (r *Repository) GetScenariosWithLikes(nameFilter string, maxHours float64) 
 	return result, nil
 }
 
-// DeleteScenarioSQL выполняет логическое удаление сценария (статус меняется на 'deleted') с помощью SQL UPDATE БЕЗ ORM
 func (r *Repository) DeleteScenarioSQL(scenarioID uint) error {
-	rawSQL := "UPDATE battery_scenarios SET scenario_status = $1 WHERE id = $2"
-	result := r.db.Exec(rawSQL, "deleted", scenarioID)
-	if result.Error != nil {
-		return fmt.Errorf("ошибка SQL UPDATE при удалении сценария: %w", result.Error)
+	query := "UPDATE battery_scenarios SET scenario_status = $1 WHERE id = $2 RETURNING id, scenario_title, scenario_status"
+
+	rows, err := r.db.Raw(query, "deleted", scenarioID).Rows()
+	if err != nil {
+		return fmt.Errorf("ошибка выполнения SQL запроса через курсор rows: %w", err)
 	}
-	if result.RowsAffected == 0 {
+	defer rows.Close()
+
+	if !rows.Next() {
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("ошибка курсора rows: %w", err)
+		}
 		return fmt.Errorf("сценарий с id %d не найден для удаления", scenarioID)
 	}
+
+	var (
+		id     uint
+		title  string
+		status string
+	)
+
+	if err := rows.Scan(&id, &title, &status); err != nil {
+		return fmt.Errorf("ошибка сканирования данных из курсора rows: %w", err)
+	}
+
 	return nil
 }

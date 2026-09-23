@@ -37,7 +37,6 @@ body {
     background: var(--background-color);
 }
 
-/* Figma navbar shadow: blur 220px, spread 220px, opacity 95%. */
 .feed-container::before,
 .add-container::before,
 .scenarios-container::before {
