@@ -65,6 +65,7 @@
 
 .content-card {
     margin-bottom: 14px;
+    overflow: hidden;
 }
 
 .scenario-title {
@@ -79,6 +80,46 @@
     line-height: 20px;
     color: var(--muted-text-color);
     margin-bottom: 6px;
+    word-break: break-word;
+}
+
+.description-wrapper {
+    position: relative;
+}
+
+.desc-expand-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    pointer-events: none;
+}
+
+.desc-full {
+    display: none;
+}
+
+.desc-expand-checkbox:checked ~ .desc-short {
+    display: none;
+}
+
+.desc-expand-checkbox:checked ~ .desc-full {
+    display: block;
+}
+
+.description-more {
+    color: #999;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    margin-left: 2px;
+    font-weight: 500;
+    transition: color 0.15s ease;
+}
+
+.description-more:hover {
+    color: #fff;
 }
 
 .tags {
@@ -91,9 +132,9 @@
 .tag {
     background: rgba(14, 165, 233, .8);
     color: var(--main-color);
-    padding: 7.5px 12px;
+    padding: 8px 12px;
     border-radius: 10px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     line-height: 13px;
 }
@@ -116,7 +157,6 @@
 
 .scenario-title, .actions-sidebar { color: white; }
 .scenario-description { color: #C1C5C4; }
-.description-more { color: #999; text-decoration: none; white-space: nowrap; }
 .bg-video { background: var(--background-color); }
 
 /* Match the full-width Figma fade without browser clipping of a large shadow. */
@@ -130,4 +170,5 @@
     background: linear-gradient(to bottom, transparent 42%, #0F1117 92%);
     z-index: 1;
 }
-.content-overlay, .actions-sidebar { z-index: 2; }
+.actions-sidebar { z-index: 2; }
+.content-overlay { z-index: 10; }

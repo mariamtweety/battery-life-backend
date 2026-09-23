@@ -11,46 +11,68 @@
     <div class="add-container">
         <div class="header">
             <h1>Новый сценарий</h1>
-            {{ if .scenario }}
+            {{ if .has_draft }}
             <span class="status-badge">Черновик</span>
             {{ end }}
         </div>
 
-        <form class="scenario-form">
+        <form action="{{ if .has_draft }}/add/publish{{ else }}/add{{ end }}" method="POST" class="scenario-form">
+            {{ if .has_draft }}
+            <input type="hidden" name="scenario_id" value="{{ .scenario.ID }}">
+            {{ end }}
+
+            <!-- 1 & 2: Поля для фото и видео -->
             <span class="media-label">Медиа</span>
             <div class="upload-section">
-                <div class="upload-box">
-                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 4l1-2h6l1 2h3a3 3 0 0 1 3 3v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a3 3 0 0 1 3-3Z"/><circle cx="12" cy="12" r="4"/></svg>
-                    <span>Изображение</span>
-                </div>
-                <div class="upload-box">
-                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="1" y="4" width="16" height="17" rx="3"/><path d="m17 9 6-4v15l-6-4Z"/></svg>
-                    <span>Видео</span>
-                </div>
+                <label class="upload-box {{ if and .scenario .scenario.ImageURL }}active{{ end }}">
+                    <input type="file" name="photo" accept="image/*" style="display:none" onchange="if(this.files[0]) document.getElementById('img-label').textContent = this.files[0].name;">
+                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 4l1-2h6l1 2h3a3 3 0 0 1 3 3v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a3 3 0 0 1 3-3Z"/><circle cx="12" cy="12" r="4"/></svg>
+                    <span id="img-label">{{ if and .scenario .scenario.ImageURL }}{{ .scenario.ImageURL }}{{ else }}Изображение{{ end }}</span>
+                </label>
+                <label class="upload-box {{ if and .scenario .scenario.VideoURL }}active{{ end }}">
+                    <input type="file" name="video" accept="video/*" style="display:none" onchange="if(this.files[0]) document.getElementById('vid-label').textContent = this.files[0].name;">
+                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="1" y="4" width="16" height="17" rx="3"/><path d="m17 9 6-4v15l-6-4Z"/></svg>
+                    <span id="vid-label">{{ if and .scenario .scenario.VideoURL }}{{ .scenario.VideoURL }}{{ else }}Видео{{ end }}</span>
+                </label>
             </div>
 
+            <!-- 3: Поле для названия -->
             <div class="form-card">
                 <div class="form-group">
-                    <label for="scenario-name">Название сценария</label>
-                    <input id="scenario-name" type="text" value="{{ .scenario.Name }}" placeholder="Введите название">
+                    <label for="scenario-name">Название сценария (до 24 символов)</label>
+                    <input id="scenario-name" name="scenario_title" type="text" maxlength="24" value="{{ if .scenario }}{{ .scenario.ScenarioTitle }}{{ end }}" placeholder="Введите название" {{ if .has_draft }}disabled tabindex="-1" class="disabled-input"{{ else }}required{{ end }}>
+                    {{ if .has_draft }}
+                    <input type="hidden" name="scenario_title" value="{{ .scenario.ScenarioTitle }}">
+                    {{ end }}
                 </div>
 
+                {{ if .has_draft }}
+                <!-- Поля по теме (отображаются только при публикации черновика) -->
                 <div class="form-group">
-                    <label for="consumption">Расход заряда, мА*ч / ч</label>
-                    <input id="consumption" type="number" min="0" value="{{ .scenario.ChargeConsumption }}" placeholder="0">
+                    <label for="consumption">Расход заряда, мА*ч / ч (от 1 до 9999)</label>
+                    <input id="consumption" name="battery_drain_mah" type="number" min="1" max="9999" step="1" value="{{ if and .scenario (gt .scenario.BatteryDrainMah 0) }}{{ .scenario.BatteryDrainMah }}{{ end }}" placeholder="от 1 до 9999" required>
                 </div>
 
                 <div class="form-group">
                     <label for="work-time">Среднее время использования, ч</label>
-                    <input id="work-time" type="number" min="0" step="0.1" value="{{ .scenario.WorkTime }}" placeholder="0">
+                    <input id="work-time" name="usage_duration_hours" type="number" min="0.1" max="24" step="0.1" value="{{ if and .scenario (gt .scenario.UsageDurationHours 0.0) }}{{ .scenario.UsageDurationHours }}{{ end }}" placeholder="например, 8.0" required>
                 </div>
+                {{ end }}
             </div>
 
+            {{ if .has_draft }}
+            <!-- Краткая информация / описание (отображается только при публикации черновика) -->
             <div class="form-group description-group">
-                <label for="description">Описание</label>
-                <textarea id="description" placeholder="Введите описание">{{ .scenario.Description }}</textarea>
+                <label for="description">Описание (до 400 символов)</label>
+                <textarea id="description" name="scenario_description" minlength="1" maxlength="400" placeholder="Введите краткое описание" required>{{ if .scenario }}{{ .scenario.ScenarioDescription }}{{ end }}</textarea>
             </div>
+            {{ end }}
 
+            {{ if .has_draft }}
+            <button type="submit" class="submit-action-btn publish-btn">Опубликовать</button>
+            {{ else }}
+            <button type="submit" class="submit-action-btn next-btn">Далее</button>
+            {{ end }}
         </form>
 
         <nav class="bottom-tab-bar">

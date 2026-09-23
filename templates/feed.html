@@ -11,10 +11,11 @@
     <div class="feed-container">
         <div class="video-background">
             <video autoplay muted loop playsinline class="bg-video">
-                <source src="{{ .scenario.VideoURL }}" type="video/mp4">
+                <source src="{{ if and .scenario .scenario.VideoURL }}{{ .scenario.VideoURL }}{{ else }}/static/video/default.mp4{{ end }}" type="video/mp4">
             </video>
         </div>
 
+        {{ if .scenario }}
         <div class="actions-sidebar">
             <div class="like-btn">
                 <svg width="32" height="27" viewBox="0 0 32 27" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -24,7 +25,6 @@
             </div>
             <a href="/feed/{{ .scenario.ID }}?next=true" class="next-btn" aria-label="Следующий сценарий">
                 <svg width="35" height="35" viewBox="0 0 35 35" fill="none" stroke="var(--primary-text-color)" stroke-width="2">
-                    
                     <path d="M17.5 7.3v20.4M7.3 17.5l10.2 10.2 10.2-10.2"/>
                 </svg>
             </a>
@@ -32,20 +32,34 @@
 
         <div class="content-overlay">
             <div class="content-card">
-                <h2 class="scenario-title">{{ .scenario.Name }}</h2>
-                <p class="scenario-description">{{ .scenario.Description }}<a class="description-more" href="/add?id={{ .scenario.ID }}">... ещё</a></p>
-                <a href="/add?id={{ .scenario.ID }}" class="details-link">
-                    <span>Подробнее</span>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M5.25 3.5L8.75 7L5.25 10.5"/>
-                    </svg>
-                </a>
+                <h2 class="scenario-title">{{ .scenario.ScenarioTitle }}</h2>
+                {{ if .is_long_desc }}
+                <div class="description-wrapper">
+                    <input type="checkbox" id="desc-expand-toggle-{{ .scenario.ID }}" class="desc-expand-checkbox" aria-label="Показать полное описание">
+                    <p class="scenario-description desc-short">
+                        {{- .short_desc -}}<label for="desc-expand-toggle-{{ .scenario.ID }}" class="description-more" role="button" tabindex="0">... ещё</label>
+                    </p>
+                    <p class="scenario-description desc-full">
+                        {{- .scenario.ScenarioDescription -}}<label for="desc-expand-toggle-{{ .scenario.ID }}" class="description-more" role="button" tabindex="0">... меньше</label>
+                    </p>
+                </div>
+                {{ else }}
+                <p class="scenario-description">{{ .scenario.ScenarioDescription }}</p>
+                {{ end }}
             </div>
             <div class="tags">
-                <span class="tag">Расход = {{ .scenario.ChargeConsumption }} мА</span>
-                <span class="tag">Время использования = {{ .scenario.WorkTime }} ч</span>
+                <span class="tag">Расход = {{ .scenario.BatteryDrainMah }} мА*ч</span>
+                <span class="tag">Время использования = {{ .scenario.UsageDurationHours }} ч</span>
             </div>
         </div>
+        {{ else }}
+        <div class="content-overlay">
+            <div class="content-card">
+                <h2 class="scenario-title">Нет сценариев</h2>
+                <p class="scenario-description">Опубликованные сценарии отсутствуют в базе данных</p>
+            </div>
+        </div>
+        {{ end }}
 
         <nav class="bottom-tab-bar">
             <div class="tabs">

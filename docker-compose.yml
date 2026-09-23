@@ -1,7 +1,30 @@
 services:
+  postgres:
+    image: postgres:17
+    container_name: battery-life-postgres-1
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: battery
+      POSTGRES_PASSWORD: battery_lab
+      POSTGRES_DB: battery_life
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer:latest
+    container_name: battery-life-adminer-1
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+
   minio:
-    container_name: minio_storage
     image: minio/minio:latest
+    container_name: minio_storage
+    restart: unless-stopped
     ports:
       - "9002:9000"
       - "9001:9001"
@@ -14,4 +37,5 @@ services:
     command: server /data --console-address ":9001"
 
 volumes:
+  postgres_data:
   minio-data:
