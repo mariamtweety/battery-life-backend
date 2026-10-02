@@ -89,7 +89,7 @@ func (r *Repository) PublishScenario(id uint, description string, drainMah int, 
 
 func (r *Repository) GetLikesCount(scenarioID uint) int64 {
 	var count int64
-	err := r.db.Model(&ds.ScenarioLike{}).Where("scenario_id = ?", scenarioID).Count(&count).Error
+	err := r.db.Model(&ds.BatteryScenarioLike{}).Where("scenario_id = ?", scenarioID).Count(&count).Error
 	if err != nil {
 		return 0
 	}
@@ -123,7 +123,7 @@ func (r *Repository) GetScenariosWithLikes(nameFilter string, maxHours float64) 
 	return result, nil
 }
 
-func (r *Repository) DeleteScenarioSQL(scenarioID uint) error {
+func (r *Repository) MarkScenarioDeleted(scenarioID uint) error {
 	query := "UPDATE battery_scenarios SET scenario_status = $1 WHERE id = $2 RETURNING id, scenario_title, scenario_status"
 
 	rows, err := r.db.Raw(query, "deleted", scenarioID).Rows()

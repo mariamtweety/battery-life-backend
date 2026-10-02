@@ -15,7 +15,7 @@ type BatteryScenario struct {
 	FormationDate       *time.Time `gorm:"column:formation_date" json:"formation_date"`
 	CreatedByUserID     uint       `gorm:"not null;column:created_by_user_id" json:"created_by_user_id"`
 
-	Creator PhoneUser `gorm:"foreignKey:CreatedByUserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;" json:"creator"`
+	Creator BatteryAppUser `gorm:"foreignKey:CreatedByUserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;" json:"creator"`
 }
 
 func (BatteryScenario) TableName() string {

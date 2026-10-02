@@ -129,10 +129,10 @@
 .delete-scenario-btn {
     width: 22px;
     height: 22px;
-    background: rgba(239, 68, 68, 0.85);
+    background: var(--accent-color);
     border: none;
     border-radius: 6px;
-    color: white;
+    color: var(--main-color);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -141,7 +141,6 @@
 }
 
 .delete-scenario-btn:hover {
-    background: rgb(220, 38, 38);
     transform: scale(1.05);
 }
 

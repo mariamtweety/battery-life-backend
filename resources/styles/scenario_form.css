@@ -195,7 +195,7 @@
     height: 44px;
     margin-top: 20px;
     background: var(--accent-color);
-    color: white;
+    color: var(--primary-text-color);
     font-size: 15px;
     font-weight: 700;
     border: none;
@@ -205,19 +205,10 @@
 }
 
 .submit-action-btn:hover {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
+    background: var(--accent-color-hover);
 }
 
 .submit-action-btn:active {
     transform: translateY(0);
-}
-
-.publish-btn {
-    background: #10B981;
-}
-
-.publish-btn:hover {
-    background: #059669;
 }
 

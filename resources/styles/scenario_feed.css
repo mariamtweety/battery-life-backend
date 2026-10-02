@@ -4,7 +4,6 @@
     overflow: hidden;
     min-height: 700px;
     height: 100vh;
-    height: 100dvh;
     color: var(--primary-text-color);
 }
 
@@ -49,10 +48,6 @@
     font-size: 14px;
     font-weight: 500;
     line-height: 17px;
-}
-
-.next-btn {
-    color: var(--primary-text-color);
 }
 
 .content-overlay {

@@ -22,11 +22,13 @@ func main() {
 		log.Fatalf("failed to connect database: %v", err)
 	}
 
+	renameLegacyTables(db)
+
 	log.Println("Running AutoMigrate for 3 domain models...")
 	err = db.AutoMigrate(
-		&ds.PhoneUser{},
+		&ds.BatteryAppUser{},
 		&ds.BatteryScenario{},
-		&ds.ScenarioLike{},
+		&ds.BatteryScenarioLike{},
 	)
 	if err != nil {
 		log.Fatalf("cant migrate db: %v", err)
@@ -60,12 +62,32 @@ func main() {
 	log.Println("Database migration and initial seeding completed successfully!")
 }
 
+func renameLegacyTables(db *gorm.DB) {
+	if db.Migrator().HasTable("phone_users") && !db.Migrator().HasTable("battery_app_users") {
+		if err := db.Migrator().RenameTable("phone_users", "battery_app_users"); err != nil {
+			log.Fatalf("cant rename phone_users table: %v", err)
+		}
+		if err := db.Exec("ALTER SEQUENCE IF EXISTS phone_users_id_seq RENAME TO battery_app_users_id_seq").Error; err != nil {
+			log.Fatalf("cant rename phone_users sequence: %v", err)
+		}
+	}
+
+	if db.Migrator().HasTable("scenario_likes") && !db.Migrator().HasTable("battery_scenario_likes") {
+		if err := db.Migrator().RenameTable("scenario_likes", "battery_scenario_likes"); err != nil {
+			log.Fatalf("cant rename scenario_likes table: %v", err)
+		}
+		if err := db.Exec("ALTER SEQUENCE IF EXISTS scenario_likes_id_seq RENAME TO battery_scenario_likes_id_seq").Error; err != nil {
+			log.Fatalf("cant rename scenario_likes sequence: %v", err)
+		}
+	}
+}
+
 func seedData(db *gorm.DB) {
 	var usersCount int64
-	db.Model(&ds.PhoneUser{}).Count(&usersCount)
+	db.Model(&ds.BatteryAppUser{}).Count(&usersCount)
 	if usersCount == 0 {
-		log.Println("Seeding phone_users...")
-		users := []ds.PhoneUser{
+		log.Println("Seeding battery_app_users...")
+		users := []ds.BatteryAppUser{
 			{
 				ID:           1,
 				Username:     "tester_alex",
@@ -196,14 +218,14 @@ func seedData(db *gorm.DB) {
 		}
 
 		db.Exec("SELECT setval('battery_scenarios_id_seq', (SELECT MAX(id) FROM battery_scenarios));")
-		db.Exec("SELECT setval('phone_users_id_seq', (SELECT MAX(id) FROM phone_users));")
+		db.Exec("SELECT setval('battery_app_users_id_seq', (SELECT MAX(id) FROM battery_app_users));")
 	}
 
 	var likesCount int64
-	db.Model(&ds.ScenarioLike{}).Count(&likesCount)
+	db.Model(&ds.BatteryScenarioLike{}).Count(&likesCount)
 	if likesCount == 0 {
-		log.Println("Seeding scenario_likes...")
-		likes := []ds.ScenarioLike{
+		log.Println("Seeding battery_scenario_likes...")
+		likes := []ds.BatteryScenarioLike{
 			{UserID: 1, ScenarioID: 1, CreatedAt: time.Now()},
 			{UserID: 2, ScenarioID: 1, CreatedAt: time.Now()},
 			{UserID: 1, ScenarioID: 2, CreatedAt: time.Now()},

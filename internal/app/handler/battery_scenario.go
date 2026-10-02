@@ -14,12 +14,12 @@ import (
 
 const defaultUserID = 1
 
-func (h *Handler) GetFeed(ctx *gin.Context) {
+func (h *Handler) GetScenarioFeed(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil || id <= 0 {
-		logrus.Errorf("GetFeed: неверный ID сценария %s", idStr)
-		h.errorHandler(ctx, http.StatusBadRequest, "Неверный ID сценария", err)
+		logrus.Warnf("GetScenarioFeed: неверный ID сценария %s, перенаправление на ленту", idStr)
+		ctx.Redirect(http.StatusFound, "/")
 		return
 	}
 
@@ -31,27 +31,27 @@ func (h *Handler) GetFeed(ctx *gin.Context) {
 	}
 
 	if err != nil || scenario == nil {
-		logrus.Warnf("GetFeed: сценарий с ID %d не найден или удален", id)
-		h.errorHandler(ctx, http.StatusNotFound, "Сценарий удален или не найден", err)
+		logrus.Warnf("GetScenarioFeed: сценарий с ID %d не найден или удален, перенаправление на ленту", id)
+		ctx.Redirect(http.StatusFound, "/")
 		return
 	}
 
 	likesCount := h.Repository.GetLikesCount(scenario.ID)
 
-	ctx.HTML(http.StatusOK, "feed.html", buildFeedData(scenario, likesCount))
+	ctx.HTML(http.StatusOK, "scenario_feed.html", buildFeedData(scenario, likesCount))
 }
 
-func (h *Handler) GetFeedDefault(ctx *gin.Context) {
+func (h *Handler) GetDefaultScenarioFeed(ctx *gin.Context) {
 	scenario, err := h.Repository.GetFirstPublishedScenario()
 	if err != nil || scenario == nil {
-		logrus.Warn("GetFeedDefault: нет опубликованных сценариев")
-		ctx.HTML(http.StatusOK, "feed.html", buildFeedData(nil, 0))
+		logrus.Warn("GetDefaultScenarioFeed: нет опубликованных сценариев")
+		ctx.HTML(http.StatusOK, "scenario_feed.html", buildFeedData(nil, 0))
 		return
 	}
 
 	likesCount := h.Repository.GetLikesCount(scenario.ID)
 
-	ctx.HTML(http.StatusOK, "feed.html", buildFeedData(scenario, likesCount))
+	ctx.HTML(http.StatusOK, "scenario_feed.html", buildFeedData(scenario, likesCount))
 }
 
 func buildFeedData(scenario *ds.BatteryScenario, likes int64) gin.H {
@@ -83,7 +83,7 @@ func (h *Handler) GetDraftScenario(ctx *gin.Context) {
 			h.errorHandler(ctx, http.StatusNotFound, "Сценарий удален или не найден", err)
 			return
 		}
-		ctx.HTML(http.StatusOK, "add.html", gin.H{
+		ctx.HTML(http.StatusOK, "scenario_form.html", gin.H{
 			"scenario":  scenario,
 			"has_draft": scenario.ScenarioStatus == "draft",
 		})
@@ -97,7 +97,7 @@ func (h *Handler) GetDraftScenario(ctx *gin.Context) {
 		return
 	}
 
-	ctx.HTML(http.StatusOK, "add.html", gin.H{
+	ctx.HTML(http.StatusOK, "scenario_form.html", gin.H{
 		"scenario":  draft,
 		"has_draft": draft != nil,
 	})
@@ -116,7 +116,7 @@ func (h *Handler) CreateDraftScenario(ctx *gin.Context) {
 		logrus.Errorf("CreateDraftScenario: ошибка проверки существующего черновика: %v", err)
 	}
 	if existingDraft != nil {
-		ctx.Redirect(http.StatusFound, "/add")
+		ctx.Redirect(http.StatusFound, "/scenarios/draft")
 		return
 	}
 
@@ -141,7 +141,7 @@ func (h *Handler) CreateDraftScenario(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Redirect(http.StatusFound, "/add")
+	ctx.Redirect(http.StatusFound, "/scenarios/draft")
 }
 
 func (h *Handler) PublishScenario(ctx *gin.Context) {
@@ -185,7 +185,7 @@ func (h *Handler) PublishScenario(ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, "/scenarios")
 }
 
-func (h *Handler) GetScenariosList(ctx *gin.Context) {
+func (h *Handler) GetScenarioCatalog(ctx *gin.Context) {
 	filterStr := strings.TrimSpace(ctx.Query("filter"))
 	maxHours := 24.0
 
@@ -197,12 +197,12 @@ func (h *Handler) GetScenariosList(ctx *gin.Context) {
 
 	scenarios, err := h.Repository.GetScenariosWithLikes(filterStr, maxHours)
 	if err != nil {
-		logrus.Errorf("GetScenariosList: ошибка выборки сценариев: %v", err)
+		logrus.Errorf("GetScenarioCatalog: ошибка выборки сценариев: %v", err)
 		h.errorHandler(ctx, http.StatusInternalServerError, "Ошибка при загрузке сценариев", err)
 		return
 	}
 
-	ctx.HTML(http.StatusOK, "scenarios.html", gin.H{
+	ctx.HTML(http.StatusOK, "scenario_catalog.html", gin.H{
 		"scenarios": scenarios,
 		"filter":    filterStr,
 		"maxHours":  int(maxHours),
@@ -218,7 +218,7 @@ func (h *Handler) DeleteScenario(ctx *gin.Context) {
 		return
 	}
 
-	err = h.Repository.DeleteScenarioSQL(uint(id))
+	err = h.Repository.MarkScenarioDeleted(uint(id))
 	if err != nil {
 		logrus.Errorf("DeleteScenario: ошибка SQL UPDATE: %v", err)
 		h.errorHandler(ctx, http.StatusInternalServerError, "Не удалось удалить сценарий", err)

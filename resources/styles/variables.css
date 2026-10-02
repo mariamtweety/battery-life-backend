@@ -1,6 +1,7 @@
 :root {
     --main-color: rgba(19, 19, 31, 0.98);
-    --accent-color: #0EA5E9;
+    --accent-color: #0e9fe1;
+    --accent-color-hover: #0480b6;
 
     --background-color: #171B24;
     --section-color: rgba(19, 19, 31, 0.7);

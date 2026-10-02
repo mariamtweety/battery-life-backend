@@ -2,7 +2,7 @@ package ds
 
 import "time"
 
-type PhoneUser struct {
+type BatteryAppUser struct {
 	ID           uint      `gorm:"primaryKey;column:id" json:"id"`
 	Username     string    `gorm:"type:varchar(50);unique;not null;column:username" json:"username"`
 	PasswordHash string    `gorm:"type:varchar(100);not null;column:password_hash" json:"-"`
@@ -10,6 +10,6 @@ type PhoneUser struct {
 	CreatedAt    time.Time `gorm:"not null;column:created_at" json:"created_at"`
 }
 
-func (PhoneUser) TableName() string {
-	return "phone_users"
+func (BatteryAppUser) TableName() string {
+	return "battery_app_users"
 }

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"battery-life/internal/app/repository"
 
 	"github.com/gin-gonic/gin"
@@ -18,18 +20,21 @@ func NewHandler(r *repository.Repository) *Handler {
 }
 
 func (h *Handler) RegisterHandler(router *gin.Engine) {
-	router.GET("/", h.GetFeedDefault)
-	router.GET("/feed/:id", h.GetFeed)
-	router.GET("/add", h.GetDraftScenario)
-	router.GET("/scenarios", h.GetScenariosList)
+	router.NoRoute(func(ctx *gin.Context) {
+		ctx.Redirect(http.StatusFound, "/")
+	})
 
-	router.POST("/add", h.CreateDraftScenario)
-	router.POST("/scenarios/create", h.CreateDraftScenario)
-	router.POST("/add/publish", h.PublishScenario)
-	router.POST("/scenarios/:id/publish", h.PublishScenario)
+	router.GET("/", func(ctx *gin.Context) {
+		ctx.Redirect(http.StatusFound, "/scenarios/feed")
+	})
+	router.GET("/scenarios/feed", h.GetDefaultScenarioFeed)
+	router.GET("/scenarios/feed/:id", h.GetScenarioFeed)
+	router.GET("/scenarios/draft", h.GetDraftScenario)
+	router.GET("/scenarios", h.GetScenarioCatalog)
 
+	router.POST("/scenarios/draft", h.CreateDraftScenario)
+	router.POST("/scenarios/draft/publish", h.PublishScenario)
 	router.POST("/scenarios/delete", h.DeleteScenario)
-	router.POST("/delete-scenario", h.DeleteScenario)
 }
 
 func (h *Handler) RegisterStatic(router *gin.Engine) {
@@ -43,7 +48,9 @@ func (h *Handler) errorHandler(ctx *gin.Context, errorStatusCode int, message st
 	} else {
 		logrus.Error(message)
 	}
-	ctx.HTML(errorStatusCode, "error.html", gin.H{
-		"error": message,
-	})
+	if errorStatusCode == http.StatusNotFound {
+		ctx.Redirect(http.StatusFound, "/")
+		return
+	}
+	ctx.String(errorStatusCode, message)
 }
