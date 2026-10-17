@@ -114,23 +114,18 @@
 }
 
 .upload-box {
-    height: 52px;
+    height: 62px;
     border: 0;
     box-shadow: inset 0 0 0 1px var(--border-color);
     border-radius: 12px;
     background: linear-gradient(250deg, rgba(255, 255, 255, 0.025), transparent), var(--main-color);
+
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 2px;
-}
-
-.upload-box svg {
-    width: 20px;
-    height: 20px;
-    stroke: var(--muted-text-color);
-    stroke-width: 2;
+    position: relative;
 }
 
 .upload-box span {
@@ -212,3 +207,21 @@
     transform: translateY(0);
 }
 
+.default-img-preview {
+    position: absolute;
+    top: 11px;
+    left: 12px;
+    height: 40px;
+    width: 40px;
+    border-radius: 5px;
+}
+
+.upload-box-label {
+    font-size: 15px;
+    font-weight: 300;
+    font-family: "Adwaita Mono";
+    color: var(--muted-text-color);
+    position: absolute;
+    top: 23px;
+    left: 64px;
+}
