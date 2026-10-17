@@ -161,9 +161,6 @@ func (r *Repository) MarkScenarioDeleted(scenarioID uint) error {
 	return nil
 }
 
-// --- Lab 3 REST API Repository Methods ---
-
-// GetPublishedScenariosAPI returns published scenarios with filter and is_creator (0/1) flag
 func (r *Repository) GetPublishedScenariosAPI(currentUserID uint, filterTitle string, maxHours float64) ([]ds.ScenarioListItemSerializer, error) {
 	query := r.db.Model(&ds.BatteryScenario{}).Where("scenario_status = ?", "published")
 
@@ -209,7 +206,6 @@ func (r *Repository) GetPublishedScenariosAPI(currentUserID uint, filterTitle st
 	return items, nil
 }
 
-// GetFeedScenarioAPI returns feed scenario: first if id==nil, specific if !next, or next after id
 func (r *Repository) GetFeedScenarioAPI(currentUserID uint, id *uint, next bool) (*ds.ScenarioDetailSerializer, error) {
 	var scenario ds.BatteryScenario
 	var err error
@@ -219,7 +215,6 @@ func (r *Repository) GetFeedScenarioAPI(currentUserID uint, id *uint, next bool)
 	} else if next {
 		err = r.db.Preload("Creator").Where("id > ? AND scenario_status = ?", *id, "published").Order("id ASC").First(&scenario).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// Wrap around to first published scenario
 			err = r.db.Preload("Creator").Where("scenario_status = ?", "published").Order("id ASC").First(&scenario).Error
 		}
 	} else {
@@ -246,7 +241,6 @@ func (r *Repository) GetFeedScenarioAPI(currentUserID uint, id *uint, next bool)
 	}, nil
 }
 
-// GetDraftScenarioAPI gets the single draft scenario for current user
 func (r *Repository) GetDraftScenarioAPI(currentUserID uint) (*ds.ScenarioDetailSerializer, error) {
 	var scenario ds.BatteryScenario
 	err := r.db.Preload("Creator").Where("created_by_user_id = ? AND scenario_status = ?", currentUserID, "draft").First(&scenario).Error
@@ -269,12 +263,10 @@ func (r *Repository) GetDraftScenarioAPI(currentUserID uint) (*ds.ScenarioDetail
 	}, nil
 }
 
-// CreateOrUpdateDraftScenario creates a new draft or updates existing draft for current user
 func (r *Repository) CreateOrUpdateDraftScenario(scenario *ds.BatteryScenario) (*ds.BatteryScenario, error) {
 	var existing ds.BatteryScenario
 	err := r.db.Where("created_by_user_id = ? AND scenario_status = ?", scenario.CreatedByUserID, "draft").First(&existing).Error
 	if err == nil {
-		// Update existing draft
 		existing.ScenarioTitle = scenario.ScenarioTitle
 		if scenario.ScenarioDescription != "" {
 			existing.ScenarioDescription = scenario.ScenarioDescription
@@ -299,7 +291,6 @@ func (r *Repository) CreateOrUpdateDraftScenario(scenario *ds.BatteryScenario) (
 		return nil, err
 	}
 
-	// Create new draft
 	scenario.ScenarioStatus = "draft"
 	scenario.CreatedAt = time.Now()
 	scenario.FormationDate = nil
@@ -309,7 +300,6 @@ func (r *Repository) CreateOrUpdateDraftScenario(scenario *ds.BatteryScenario) (
 	return scenario, nil
 }
 
-// UpdateScenarioMedia saves image/video URLs to the scenario record
 func (r *Repository) UpdateScenarioMedia(scenarioID uint, imageURL, videoURL string) error {
 	updates := map[string]interface{}{}
 	if imageURL != "" {
@@ -324,7 +314,6 @@ func (r *Repository) UpdateScenarioMedia(scenarioID uint, imageURL, videoURL str
 	return r.db.Model(&ds.BatteryScenario{}).Where("id = ?", scenarioID).Updates(updates).Error
 }
 
-// PublishScenarioAPI publishes a draft scenario belonging to current user
 func (r *Repository) PublishScenarioAPI(scenarioID uint, currentUserID uint, req ds.ScenarioPublishRequest) (*ds.ScenarioDetailSerializer, error) {
 	var scenario ds.BatteryScenario
 	err := r.db.Preload("Creator").Where("id = ?", scenarioID).First(&scenario).Error
@@ -375,7 +364,6 @@ func (r *Repository) PublishScenarioAPI(scenarioID uint, currentUserID uint, req
 	}, nil
 }
 
-// SoftDeleteScenarioAPI soft-deletes a scenario belonging to current user
 func (r *Repository) SoftDeleteScenarioAPI(scenarioID uint, currentUserID uint) error {
 	var scenario ds.BatteryScenario
 	err := r.db.Where("id = ?", scenarioID).First(&scenario).Error
@@ -397,7 +385,6 @@ func (r *Repository) SoftDeleteScenarioAPI(scenarioID uint, currentUserID uint) 
 	return r.db.Model(&ds.BatteryScenario{}).Where("id = ?", scenarioID).Update("scenario_status", "deleted").Error
 }
 
-// ToggleLikeAPI toggles like from user: action=1 sets like, action=0 removes like
 func (r *Repository) ToggleLikeAPI(userID uint, scenarioID uint, action int) (*ds.ScenarioLikeResponse, error) {
 	var scenario ds.BatteryScenario
 	err := r.db.Where("id = ? AND scenario_status != 'deleted'", scenarioID).First(&scenario).Error

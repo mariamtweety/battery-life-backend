@@ -15,7 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// apiError sends JSON error response without "status: success"
 func apiError(ctx *gin.Context, statusCode int, message string) {
 	logrus.Warnf("REST API Error [%d]: %s", statusCode, message)
 	ctx.JSON(statusCode, gin.H{
@@ -23,7 +22,6 @@ func apiError(ctx *gin.Context, statusCode int, message string) {
 	})
 }
 
-// GetScenariosAPI handles GET /api/scenarios (list with filtering, published only)
 func (h *Handler) GetScenariosAPI(ctx *gin.Context) {
 	currentUserID := singleton.GetCurrentUserID()
 
@@ -51,25 +49,24 @@ func (h *Handler) GetScenariosAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, scenarios)
 }
 
-// GetScenarioFeedAPI handles GET /api/scenarios/feed and GET /api/scenarios/feed/:id
 func (h *Handler) GetScenarioFeedAPI(ctx *gin.Context) {
 	currentUserID := singleton.GetCurrentUserID()
-	idStr := ctx.Param("id")
-
-	var idPtr *uint
-	if idStr != "" {
-		idVal, err := strconv.Atoi(idStr)
-		if err != nil || idVal <= 0 {
-			apiError(ctx, http.StatusBadRequest, "Неверный ID сценария")
-			return
-		}
-		uVal := uint(idVal)
-		idPtr = &uVal
+	idStr := ctx.Query("id")
+	if idStr == "" {
+		apiError(ctx, http.StatusBadRequest, "Параметр id обязателен")
+		return
 	}
+
+	idVal, err := strconv.Atoi(idStr)
+	if err != nil || idVal <= 0 {
+		apiError(ctx, http.StatusBadRequest, "Неверный ID сценария")
+		return
+	}
+	uVal := uint(idVal)
 
 	isNext := ctx.Query("next") == "true"
 
-	scenario, err := h.Repository.GetFeedScenarioAPI(currentUserID, idPtr, isNext)
+	scenario, err := h.Repository.GetFeedScenarioAPI(currentUserID, &uVal, isNext)
 	if err != nil {
 		apiError(ctx, http.StatusNotFound, "Сценарий в ленте не найден")
 		return
@@ -78,7 +75,6 @@ func (h *Handler) GetScenarioFeedAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, scenario)
 }
 
-// GetDraftScenarioAPI handles GET /api/scenarios/draft
 func (h *Handler) GetDraftScenarioAPI(ctx *gin.Context) {
 	currentUserID := singleton.GetCurrentUserID()
 
@@ -95,11 +91,9 @@ func (h *Handler) GetDraftScenarioAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, draft)
 }
 
-// CreateDraftScenarioAPI handles POST /api/scenarios (multipart form with image and video files)
 func (h *Handler) CreateDraftScenarioAPI(ctx *gin.Context) {
 	currentUserID := singleton.GetCurrentUserID()
 
-	// Parse multipart form up to 50MB (to allow video files)
 	if err := ctx.Request.ParseMultipartForm(50 << 20); err != nil && err != http.ErrNotMultipart {
 		apiError(ctx, http.StatusBadRequest, "Ошибка парсинга формы: "+err.Error())
 		return
@@ -135,14 +129,12 @@ func (h *Handler) CreateDraftScenarioAPI(ctx *gin.Context) {
 		CreatedByUserID:     currentUserID,
 	}
 
-	// Create or update single draft for current user
 	savedScenario, err := h.Repository.CreateOrUpdateDraftScenario(scenario)
 	if err != nil {
 		apiError(ctx, http.StatusInternalServerError, "Не удалось сохранить черновик сценария: "+err.Error())
 		return
 	}
 
-	// Handle Image file upload if present
 	imgHeader, imgErr := ctx.FormFile("image")
 	if imgErr != nil {
 		imgHeader, imgErr = ctx.FormFile("scenario_image")
@@ -163,7 +155,6 @@ func (h *Handler) CreateDraftScenarioAPI(ctx *gin.Context) {
 		}
 	}
 
-	// Handle Video file upload if present
 	vidHeader, vidErr := ctx.FormFile("video")
 	if vidErr != nil {
 		vidHeader, vidErr = ctx.FormFile("scenario_video")
@@ -205,7 +196,6 @@ func (h *Handler) CreateDraftScenarioAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, savedScenario)
 }
 
-// PublishScenarioAPI handles PUT /api/scenarios/:id/publish (and PUT /api/scenarios/:id)
 func (h *Handler) PublishScenarioAPI(ctx *gin.Context) {
 	currentUserID := singleton.GetCurrentUserID()
 
@@ -218,7 +208,6 @@ func (h *Handler) PublishScenarioAPI(ctx *gin.Context) {
 
 	var req ds.ScenarioPublishRequest
 
-	// Support both JSON body and form-urlencoded
 	if ctx.ContentType() == "application/json" {
 		if err := ctx.ShouldBindJSON(&req); err != nil {
 			apiError(ctx, http.StatusBadRequest, "Неверный формат JSON: "+err.Error())
@@ -256,7 +245,6 @@ func (h *Handler) PublishScenarioAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, publishedScenario)
 }
 
-// DeleteScenarioAPI handles DELETE /api/scenarios/:id (soft delete)
 func (h *Handler) DeleteScenarioAPI(ctx *gin.Context) {
 	currentUserID := singleton.GetCurrentUserID()
 
@@ -278,7 +266,6 @@ func (h *Handler) DeleteScenarioAPI(ctx *gin.Context) {
 	})
 }
 
-// ToggleLikeAPI handles POST /api/scenarios/:id/like (0/1 toggle)
 func (h *Handler) ToggleLikeAPI(ctx *gin.Context) {
 	currentUserID := singleton.GetCurrentUserID()
 
@@ -289,7 +276,7 @@ func (h *Handler) ToggleLikeAPI(ctx *gin.Context) {
 		return
 	}
 
-	action := 1 // default like
+	action := 1
 	if ctx.ContentType() == "application/json" {
 		var req ds.ScenarioLikeRequest
 		if err := ctx.ShouldBindJSON(&req); err == nil {

@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// RegisterUser registers a new user in the system
 func (r *Repository) RegisterUser(username, password string, isModerator bool) (*ds.BatteryAppUser, error) {
 	var count int64
 	err := r.db.Model(&ds.BatteryAppUser{}).Where("username = ?", username).Count(&count).Error
@@ -23,7 +22,7 @@ func (r *Repository) RegisterUser(username, password string, isModerator bool) (
 
 	user := ds.BatteryAppUser{
 		Username:     username,
-		PasswordHash: password, // In lab 4 will be hashed with bcrypt
+		PasswordHash: password,
 		IsModerator:  isModerator,
 		CreatedAt:    time.Now(),
 	}
@@ -35,7 +34,6 @@ func (r *Repository) RegisterUser(username, password string, isModerator bool) (
 	return &user, nil
 }
 
-// GetUserByID fetches user by ID
 func (r *Repository) GetUserByID(id uint) (*ds.BatteryAppUser, error) {
 	var user ds.BatteryAppUser
 	err := r.db.Where("id = ?", id).First(&user).Error
@@ -45,7 +43,6 @@ func (r *Repository) GetUserByID(id uint) (*ds.BatteryAppUser, error) {
 	return &user, nil
 }
 
-// GetUserScenarios implements nested serialization: user and their scenarios
 func (r *Repository) GetUserScenarios(userID uint) (*ds.UserScenariosSerializer, error) {
 	var user ds.BatteryAppUser
 	err := r.db.Where("id = ?", userID).First(&user).Error
@@ -57,7 +54,6 @@ func (r *Repository) GetUserScenarios(userID uint) (*ds.UserScenariosSerializer,
 	}
 
 	var scenarios []ds.BatteryScenario
-	// Exclude deleted scenarios from client
 	err = r.db.Where("created_by_user_id = ? AND scenario_status != 'deleted'", userID).
 		Order("id ASC").
 		Find(&scenarios).Error

@@ -142,12 +142,12 @@
 			"response": []
 		},
 		{
-			"name": "5. GET Получение ленты без ID (первый опубликованный сценарий)",
+			"name": "5. GET Получение ленты по ID со следующим сценарием (?id=1&next=true)",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{base_url}}/api/scenarios/feed",
+					"raw": "{{base_url}}/api/scenarios/feed?id=1&next=true",
 					"host": [
 						"{{base_url}}"
 					],
@@ -155,29 +155,13 @@
 						"api",
 						"scenarios",
 						"feed"
-					]
-				},
-				"description": "Возвращает первый опубликованный сценарий для показа в вертикальной ленте."
-			},
-			"response": []
-		},
-		{
-			"name": "6. GET Получение ленты по ID со следующим сценарием (?next=true)",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/api/scenarios/feed/1?next=true",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"scenarios",
-						"feed",
-						"1"
 					],
 					"query": [
+						{
+							"key": "id",
+							"value": "1",
+							"description": "ID сценария"
+						},
 						{
 							"key": "next",
 							"value": "true",
@@ -185,12 +169,12 @@
 						}
 					]
 				},
-				"description": "Возвращает следующий по ID опубликованный сценарий после переданного ID."
+				"description": "Возвращает следующий по ID опубликованный сценарий после переданного ID (параметры id и next передаются в query)."
 			},
 			"response": []
 		},
 		{
-			"name": "7. POST Поставить / отменить лайк сценарию (поле like: 1 или 0)",
+			"name": "6. POST Поставить / отменить лайк сценарию (поле like: 1 или 0)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -220,7 +204,7 @@
 			"response": []
 		},
 		{
-			"name": "8. DELETE Удаление сценария (soft delete)",
+			"name": "7. DELETE Удаление сценария (soft delete)",
 			"request": {
 				"method": "DELETE",
 				"header": [],
@@ -240,7 +224,7 @@
 			"response": []
 		},
 		{
-			"name": "9. POST Регистрация нового пользователя",
+			"name": "8. POST Регистрация нового пользователя",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -269,7 +253,7 @@
 			"response": []
 		},
 		{
-			"name": "10. POST Аутентификация пользователя (заглушка для ЛР4)",
+			"name": "9. POST Аутентификация пользователя (заглушка для ЛР4)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -298,7 +282,7 @@
 			"response": []
 		},
 		{
-			"name": "11. POST Деавторизация пользователя (заглушка для ЛР4)",
+			"name": "10. POST Деавторизация пользователя (заглушка для ЛР4)",
 			"request": {
 				"method": "POST",
 				"header": [],
@@ -314,26 +298,6 @@
 					]
 				},
 				"description": "Заглушка деавторизации для ЛР4."
-			},
-			"response": []
-		},
-		{
-			"name": "12. GET Пользователь с его сценариями (вложенная сериализация)",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/api/users/1",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"users",
-						"1"
-					]
-				},
-				"description": "Демонстрация вложенной сериализации: возвращает объект пользователя с массивом его сценариев (исключая удаленные)."
 			},
 			"response": []
 		}

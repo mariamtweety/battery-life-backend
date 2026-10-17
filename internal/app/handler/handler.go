@@ -29,7 +29,6 @@ func (h *Handler) RegisterHandler(router *gin.Engine) {
 		ctx.Redirect(http.StatusFound, "/")
 	})
 
-	// SSR routes from Lab 1 & 2
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.Redirect(http.StatusFound, "/scenarios/feed")
 	})
@@ -42,25 +41,19 @@ func (h *Handler) RegisterHandler(router *gin.Engine) {
 	router.POST("/scenarios/draft/publish", h.PublishScenario)
 	router.POST("/scenarios/delete", h.DeleteScenario)
 
-	// --- REST API routes for Lab 3 ---
 	api := router.Group("/api")
 	{
-		// Scenario domain
 		api.GET("/scenarios", h.GetScenariosAPI)
 		api.GET("/scenarios/feed", h.GetScenarioFeedAPI)
-		api.GET("/scenarios/feed/:id", h.GetScenarioFeedAPI)
 		api.GET("/scenarios/draft", h.GetDraftScenarioAPI)
 		api.POST("/scenarios", h.CreateDraftScenarioAPI)
 		api.PUT("/scenarios/:id/publish", h.PublishScenarioAPI)
-		api.PUT("/scenarios/:id", h.PublishScenarioAPI)
 		api.DELETE("/scenarios/:id", h.DeleteScenarioAPI)
 		api.POST("/scenarios/:id/like", h.ToggleLikeAPI)
 
-		// User domain
 		api.POST("/users/register", h.RegisterUserAPI)
 		api.POST("/users/login", h.LoginUserAPI)
 		api.POST("/users/logout", h.LogoutUserAPI)
-		api.GET("/users/:id", h.GetUserScenariosAPI)
 	}
 }
 

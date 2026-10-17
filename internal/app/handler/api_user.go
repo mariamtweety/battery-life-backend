@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterUserAPI handles POST /api/users/register
 func (h *Handler) RegisterUserAPI(ctx *gin.Context) {
 	var req ds.UserRegisterRequest
 
@@ -47,7 +45,6 @@ func (h *Handler) RegisterUserAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, user)
 }
 
-// LoginUserAPI handles POST /api/users/login (stub for Lab 4)
 func (h *Handler) LoginUserAPI(ctx *gin.Context) {
 	var req ds.UserLoginRequest
 
@@ -67,27 +64,8 @@ func (h *Handler) LoginUserAPI(ctx *gin.Context) {
 	})
 }
 
-// LogoutUserAPI handles POST /api/users/logout (stub for Lab 4)
 func (h *Handler) LogoutUserAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, ds.AuthResponse{
 		Message: "Деавторизация успешна (заглушка для ЛР4)",
 	})
-}
-
-// GetUserScenariosAPI handles GET /api/users/:id (nested serialization)
-func (h *Handler) GetUserScenariosAPI(ctx *gin.Context) {
-	idStr := ctx.Param("id")
-	idVal, err := strconv.Atoi(idStr)
-	if err != nil || idVal <= 0 {
-		apiError(ctx, http.StatusBadRequest, "Неверный ID пользователя")
-		return
-	}
-
-	data, err := h.Repository.GetUserScenarios(uint(idVal))
-	if err != nil {
-		apiError(ctx, http.StatusNotFound, err.Error())
-		return
-	}
-
-	ctx.JSON(http.StatusOK, data)
 }

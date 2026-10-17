@@ -123,7 +123,6 @@ func (r *Repository) PublicURL() string {
 	return r.minioPublicURL
 }
 
-// GenerateLatinFilename creates a safe Latin filename for uploaded scenario media
 func GenerateLatinFilename(mediaType string, scenarioID uint, originalName string) string {
 	ext := filepath.Ext(originalName)
 	if ext == "" {
@@ -147,7 +146,6 @@ func GenerateLatinFilename(mediaType string, scenarioID uint, originalName strin
 	return fmt.Sprintf("scenario_%d_%s_%d%s", scenarioID, mediaType, time.Now().UnixNano(), cleanExt)
 }
 
-// UploadScenarioMedia uploads an image or video file to MinIO with Latin filename and returns its URL
 func (r *Repository) UploadScenarioMedia(ctx context.Context, header *multipart.FileHeader, mediaType string, scenarioID uint) (string, error) {
 	if r.minio == nil {
 		return "", fmt.Errorf("клиент MinIO не настроен")
