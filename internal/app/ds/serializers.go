@@ -1,32 +1,41 @@
 package ds
 
-import (
-	"time"
-)
-
 type ScenarioListItemSerializer struct {
-	ID                  uint       `json:"id"`
-	ScenarioTitle       string     `json:"scenario_title"`
-	ScenarioDescription string     `json:"scenario_description"`
-	ScenarioStatus      string     `json:"scenario_status"`
-	ImageURL            string     `json:"image_url"`
-	VideoURL            string     `json:"video_url"`
-	BatteryDrainMah     int        `json:"battery_drain_mah"`
-	UsageDurationHours  float64    `json:"usage_duration_hours"`
-	CreatedAt           time.Time  `json:"created_at"`
-	FormationDate       *time.Time `json:"formation_date"`
-	CreatedByUserID     uint       `json:"created_by_user_id"`
-	LikesCount          int64      `json:"likes_count"`
-	IsCreator           int        `json:"is_creator"`
-	IsLiked             int        `json:"is_liked"`
+	ID                 uint    `json:"id"`
+	ScenarioTitle      string  `json:"scenario_title"`
+	ImageURL           string  `json:"image_url"`
+	BatteryDrainMah    int     `json:"battery_drain_mah"`
+	UsageDurationHours float64 `json:"usage_duration_hours"`
+	LikesCount         int64   `json:"likes_count"`
 }
 
-type ScenarioDetailSerializer struct {
-	BatteryScenario
-	LikesCount int64          `json:"likes_count"`
-	IsCreator  int            `json:"is_creator"`
-	IsLiked    int            `json:"is_liked"`
-	Creator    BatteryAppUser `json:"creator"`
+type ScenarioFeedItemSerializer struct {
+	ID                  uint    `json:"id"`
+	ScenarioTitle       string  `json:"scenario_title"`
+	ScenarioDescription string  `json:"scenario_description"`
+	VideoURL            string  `json:"video_url"`
+	BatteryDrainMah     int     `json:"battery_drain_mah"`
+	UsageDurationHours  float64 `json:"usage_duration_hours"`
+	LikesCount          int64   `json:"likes_count"`
+	IsLiked             int     `json:"is_liked"`
+}
+
+type ScenarioDraftResponse struct {
+	ID            uint   `json:"id"`
+	ScenarioTitle string `json:"scenario_title"`
+	ImageURL      string `json:"image_url,omitempty"`
+	VideoURL      string `json:"video_url,omitempty"`
+}
+
+type ScenarioDraftDetailSerializer struct {
+	ID                  uint    `json:"id"`
+	ScenarioTitle       string  `json:"scenario_title"`
+	ScenarioDescription string  `json:"scenario_description"`
+	ImageURL            string  `json:"image_url,omitempty"`
+	VideoURL            string  `json:"video_url,omitempty"`
+	BatteryDrainMah     int     `json:"battery_drain_mah"`
+	UsageDurationHours  float64 `json:"usage_duration_hours"`
+	ScenarioStatus      string  `json:"scenario_status"`
 }
 
 type UserScenariosSerializer struct {
@@ -66,9 +75,4 @@ type AuthResponse struct {
 	Message string          `json:"message"`
 	Token   string          `json:"token,omitempty"`
 	User    *BatteryAppUser `json:"user,omitempty"`
-}
-
-type SimpleMessageResponse struct {
-	Message string `json:"message"`
-	ID      uint   `json:"id,omitempty"`
 }

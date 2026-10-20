@@ -178,72 +178,58 @@ func (r *Repository) GetPublishedScenariosAPI(currentUserID uint, filterTitle st
 
 	items := make([]ds.ScenarioListItemSerializer, 0, len(scenarios))
 	for _, s := range scenarios {
-		isCreator := 0
-		if s.CreatedByUserID == currentUserID {
-			isCreator = 1
-		}
-		isLiked := r.IsScenarioLikedByUser(currentUserID, s.ID)
 		likesCount := r.GetLikesCount(s.ID)
 
 		items = append(items, ds.ScenarioListItemSerializer{
-			ID:                  s.ID,
-			ScenarioTitle:       s.ScenarioTitle,
-			ScenarioDescription: s.ScenarioDescription,
-			ScenarioStatus:      s.ScenarioStatus,
-			ImageURL:            s.ImageURL,
-			VideoURL:            s.VideoURL,
-			BatteryDrainMah:     s.BatteryDrainMah,
-			UsageDurationHours:  s.UsageDurationHours,
-			CreatedAt:           s.CreatedAt,
-			FormationDate:       s.FormationDate,
-			CreatedByUserID:     s.CreatedByUserID,
-			LikesCount:          likesCount,
-			IsCreator:           isCreator,
-			IsLiked:             isLiked,
+			ID:                 s.ID,
+			ScenarioTitle:      s.ScenarioTitle,
+			ImageURL:           s.ImageURL,
+			BatteryDrainMah:    s.BatteryDrainMah,
+			UsageDurationHours: s.UsageDurationHours,
+			LikesCount:         likesCount,
 		})
 	}
 
 	return items, nil
 }
 
-func (r *Repository) GetFeedScenarioAPI(currentUserID uint, id *uint, next bool) (*ds.ScenarioDetailSerializer, error) {
+func (r *Repository) GetFeedScenarioAPI(currentUserID uint, id *uint, next bool) (*ds.ScenarioFeedItemSerializer, error) {
 	var scenario ds.BatteryScenario
 	var err error
 
 	if id == nil {
-		err = r.db.Preload("Creator").Where("scenario_status = ?", "published").Order("id ASC").First(&scenario).Error
+		err = r.db.Where("scenario_status = ?", "published").Order("id ASC").First(&scenario).Error
 	} else if next {
-		err = r.db.Preload("Creator").Where("id > ? AND scenario_status = ?", *id, "published").Order("id ASC").First(&scenario).Error
+		err = r.db.Where("id > ? AND scenario_status = ?", *id, "published").Order("id ASC").First(&scenario).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = r.db.Preload("Creator").Where("scenario_status = ?", "published").Order("id ASC").First(&scenario).Error
+			err = r.db.Where("scenario_status = ?", "published").Order("id ASC").First(&scenario).Error
 		}
 	} else {
-		err = r.db.Preload("Creator").Where("id = ? AND scenario_status = ?", *id, "published").First(&scenario).Error
+		err = r.db.Where("id = ? AND scenario_status = ?", *id, "published").First(&scenario).Error
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	isCreator := 0
-	if scenario.CreatedByUserID == currentUserID {
-		isCreator = 1
-	}
 	isLiked := r.IsScenarioLikedByUser(currentUserID, scenario.ID)
 	likesCount := r.GetLikesCount(scenario.ID)
 
-	return &ds.ScenarioDetailSerializer{
-		BatteryScenario: scenario,
-		LikesCount:      likesCount,
-		IsCreator:       isCreator,
-		IsLiked:         isLiked,
-		Creator:         scenario.Creator,
+	return &ds.ScenarioFeedItemSerializer{
+		ID:                  scenario.ID,
+		ScenarioTitle:       scenario.ScenarioTitle,
+		ScenarioDescription: scenario.ScenarioDescription,
+		VideoURL:            scenario.VideoURL,
+		BatteryDrainMah:     scenario.BatteryDrainMah,
+		UsageDurationHours:  scenario.UsageDurationHours,
+		LikesCount:          likesCount,
+		IsLiked:             isLiked,
 	}, nil
 }
 
-func (r *Repository) GetDraftScenarioAPI(currentUserID uint) (*ds.ScenarioDetailSerializer, error) {
+func (r *Repository) GetDraftScenarioAPI(currentUserID uint) (*ds.ScenarioDraftDetailSerializer, error) {
 	var scenario ds.BatteryScenario
-	err := r.db.Preload("Creator").Where("created_by_user_id = ? AND scenario_status = ?", currentUserID, "draft").First(&scenario).Error
+	err := r.db.Where("created_by_user_id = ? AND scenario_status = ?", currentUserID, "draft").First(&scenario).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -251,15 +237,15 @@ func (r *Repository) GetDraftScenarioAPI(currentUserID uint) (*ds.ScenarioDetail
 		return nil, err
 	}
 
-	likesCount := r.GetLikesCount(scenario.ID)
-	isLiked := r.IsScenarioLikedByUser(currentUserID, scenario.ID)
-
-	return &ds.ScenarioDetailSerializer{
-		BatteryScenario: scenario,
-		LikesCount:      likesCount,
-		IsCreator:       1,
-		IsLiked:         isLiked,
-		Creator:         scenario.Creator,
+	return &ds.ScenarioDraftDetailSerializer{
+		ID:                  scenario.ID,
+		ScenarioTitle:       scenario.ScenarioTitle,
+		ScenarioDescription: scenario.ScenarioDescription,
+		ImageURL:            scenario.ImageURL,
+		VideoURL:            scenario.VideoURL,
+		BatteryDrainMah:     scenario.BatteryDrainMah,
+		UsageDurationHours:  scenario.UsageDurationHours,
+		ScenarioStatus:      scenario.ScenarioStatus,
 	}, nil
 }
 
@@ -314,9 +300,9 @@ func (r *Repository) UpdateScenarioMedia(scenarioID uint, imageURL, videoURL str
 	return r.db.Model(&ds.BatteryScenario{}).Where("id = ?", scenarioID).Updates(updates).Error
 }
 
-func (r *Repository) PublishScenarioAPI(scenarioID uint, currentUserID uint, req ds.ScenarioPublishRequest) (*ds.ScenarioDetailSerializer, error) {
+func (r *Repository) PublishScenarioAPI(scenarioID uint, currentUserID uint, req ds.ScenarioPublishRequest) (*ds.ScenarioDraftDetailSerializer, error) {
 	var scenario ds.BatteryScenario
-	err := r.db.Preload("Creator").Where("id = ?", scenarioID).First(&scenario).Error
+	err := r.db.Where("id = ?", scenarioID).First(&scenario).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("сценарий с id %d не найден", scenarioID)
@@ -352,15 +338,15 @@ func (r *Repository) PublishScenarioAPI(scenarioID uint, currentUserID uint, req
 		return nil, err
 	}
 
-	likesCount := r.GetLikesCount(scenario.ID)
-	isLiked := r.IsScenarioLikedByUser(currentUserID, scenario.ID)
-
-	return &ds.ScenarioDetailSerializer{
-		BatteryScenario: scenario,
-		LikesCount:      likesCount,
-		IsCreator:       1,
-		IsLiked:         isLiked,
-		Creator:         scenario.Creator,
+	return &ds.ScenarioDraftDetailSerializer{
+		ID:                  scenario.ID,
+		ScenarioTitle:       scenario.ScenarioTitle,
+		ScenarioDescription: scenario.ScenarioDescription,
+		ImageURL:            scenario.ImageURL,
+		VideoURL:            scenario.VideoURL,
+		BatteryDrainMah:     scenario.BatteryDrainMah,
+		UsageDurationHours:  scenario.UsageDurationHours,
+		ScenarioStatus:      scenario.ScenarioStatus,
 	}, nil
 }
 

@@ -51,22 +51,25 @@ func (h *Handler) GetScenariosAPI(ctx *gin.Context) {
 
 func (h *Handler) GetScenarioFeedAPI(ctx *gin.Context) {
 	currentUserID := singleton.GetCurrentUserID()
-	idStr := ctx.Query("id")
+	idStr := ctx.Param("id")
 	if idStr == "" {
-		apiError(ctx, http.StatusBadRequest, "Параметр id обязателен")
-		return
+		idStr = ctx.Query("id")
 	}
 
-	idVal, err := strconv.Atoi(idStr)
-	if err != nil || idVal <= 0 {
-		apiError(ctx, http.StatusBadRequest, "Неверный ID сценария")
-		return
+	var uVal *uint
+	if idStr != "" {
+		idVal, err := strconv.Atoi(idStr)
+		if err != nil || idVal <= 0 {
+			apiError(ctx, http.StatusBadRequest, "Неверный ID сценария")
+			return
+		}
+		val := uint(idVal)
+		uVal = &val
 	}
-	uVal := uint(idVal)
 
 	isNext := ctx.Query("next") == "true"
 
-	scenario, err := h.Repository.GetFeedScenarioAPI(currentUserID, &uVal, isNext)
+	scenario, err := h.Repository.GetFeedScenarioAPI(currentUserID, uVal, isNext)
 	if err != nil {
 		apiError(ctx, http.StatusNotFound, "Сценарий в ленте не найден")
 		return
@@ -187,13 +190,14 @@ func (h *Handler) CreateDraftScenarioAPI(ctx *gin.Context) {
 		}
 	}
 
-	fullDraft, err := h.Repository.GetDraftScenarioAPI(currentUserID)
-	if err == nil && fullDraft != nil {
-		ctx.JSON(http.StatusCreated, fullDraft)
-		return
+	resp := ds.ScenarioDraftResponse{
+		ID:            savedScenario.ID,
+		ScenarioTitle: savedScenario.ScenarioTitle,
+		ImageURL:      savedScenario.ImageURL,
+		VideoURL:      savedScenario.VideoURL,
 	}
 
-	ctx.JSON(http.StatusCreated, savedScenario)
+	ctx.JSON(http.StatusCreated, resp)
 }
 
 func (h *Handler) PublishScenarioAPI(ctx *gin.Context) {
