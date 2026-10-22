@@ -9,7 +9,6 @@ import (
 	"unicode/utf8"
 
 	"battery-life/internal/app/ds"
-	"battery-life/internal/app/singleton"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -22,8 +21,19 @@ func apiError(ctx *gin.Context, statusCode int, message string) {
 	})
 }
 
+// GetScenariosAPI godoc
+//
+//	@Summary		Список опубликованных услуг
+//	@Description	Доступно без авторизации. Если передан JWT, заполняются is_liked и is_creator.
+//	@Tags			scenarios
+//	@Produce		json
+//	@Param			search		query		string	false	"Фильтр по названию"
+//	@Param			max_hours	query		number	false	"Максимальная длительность использования, ч"
+//	@Success		200			{array}		ds.ScenarioListItemSerializer
+//	@Failure		500			{object}	ds.ErrorResponse
+//	@Router			/scenarios [get]
 func (h *Handler) GetScenariosAPI(ctx *gin.Context) {
-	currentUserID := singleton.GetCurrentUserID()
+	userID := currentUserID(ctx)
 
 	filterStr := strings.TrimSpace(ctx.Query("search"))
 	if filterStr == "" {
@@ -40,7 +50,7 @@ func (h *Handler) GetScenariosAPI(ctx *gin.Context) {
 		}
 	}
 
-	scenarios, err := h.Repository.GetPublishedScenariosAPI(currentUserID, filterStr, maxHours)
+	scenarios, err := h.Repository.GetPublishedScenariosAPI(userID, filterStr, maxHours)
 	if err != nil {
 		apiError(ctx, http.StatusInternalServerError, "Ошибка получения списка сценариев: "+err.Error())
 		return
@@ -49,8 +59,21 @@ func (h *Handler) GetScenariosAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, scenarios)
 }
 
+// GetScenarioFeedAPI godoc
+//
+//	@Summary		Лента услуг
+//	@Description	Без id — первая опубликованная услуга. С id — услуга по id. С id и next=true — следующая, с заворотом в начало ленты. Доступно без авторизации; is_liked/is_creator заполняются при наличии JWT.
+//	@Tags			scenarios
+//	@Produce		json
+//	@Param			id		path		int		false	"ID текущей услуги"
+//	@Param			next	query		bool	false	"Получить следующую услугу"
+//	@Success		200		{object}	ds.ScenarioFeedItemSerializer
+//	@Failure		400		{object}	ds.ErrorResponse
+//	@Failure		404		{object}	ds.ErrorResponse
+//	@Router			/scenarios/feed/{id} [get]
 func (h *Handler) GetScenarioFeedAPI(ctx *gin.Context) {
-	currentUserID := singleton.GetCurrentUserID()
+	userID := currentUserID(ctx)
+
 	idStr := ctx.Param("id")
 	if idStr == "" {
 		idStr = ctx.Query("id")
@@ -69,7 +92,7 @@ func (h *Handler) GetScenarioFeedAPI(ctx *gin.Context) {
 
 	isNext := ctx.Query("next") == "true"
 
-	scenario, err := h.Repository.GetFeedScenarioAPI(currentUserID, uVal, isNext)
+	scenario, err := h.Repository.GetFeedScenarioAPI(userID, uVal, isNext)
 	if err != nil {
 		apiError(ctx, http.StatusNotFound, "Сценарий в ленте не найден")
 		return
@@ -78,12 +101,21 @@ func (h *Handler) GetScenarioFeedAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, scenario)
 }
 
+// GetDraftScenarioAPI godoc
+//
+//	@Summary		Черновик текущего пользователя
+//	@Description	Возвращает единственный черновик авторизованного пользователя. ID с клиента не принимается.
+//	@Tags			scenarios
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	ds.ScenarioDraftDetailSerializer
+//	@Failure		401	{object}	ds.ErrorResponse
+//	@Failure		404	{object}	ds.ErrorResponse
+//	@Router			/scenarios/draft [get]
 func (h *Handler) GetDraftScenarioAPI(ctx *gin.Context) {
-	currentUserID := singleton.GetCurrentUserID()
-
-	draft, err := h.Repository.GetDraftScenarioAPI(currentUserID)
+	draft, err := h.Repository.GetDraftScenarioAPI(currentUserID(ctx))
 	if err != nil {
-		apiError(ctx, http.StatusInternalServerError, "Ошибка получения черновика: "+err.Error())
+		writeRepoError(ctx, err, "Ошибка получения черновика")
 		return
 	}
 	if draft == nil {
@@ -94,8 +126,28 @@ func (h *Handler) GetDraftScenarioAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, draft)
 }
 
+// CreateDraftScenarioAPI godoc
+//
+//	@Summary		Создать (или обновить) черновик услуги
+//	@Description	Принимает multipart/form-data. Файлы image и video сохраняются в MinIO, создатель берётся из JWT.
+//	@Tags			scenarios
+//	@Accept			mpfd
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			scenario_title	formData	string	false	"Название услуги (1-24 символа)"
+//	@Param			image			formData	file	false	"Изображение"
+//	@Param			video			formData	file	false	"Видео"
+//	@Success		201				{object}	ds.ScenarioDraftResponse
+//	@Failure		400				{object}	ds.ErrorResponse
+//	@Failure		401				{object}	ds.ErrorResponse
+//	@Failure		500				{object}	ds.ErrorResponse
+//	@Router			/scenarios [post]
 func (h *Handler) CreateDraftScenarioAPI(ctx *gin.Context) {
-	currentUserID := singleton.GetCurrentUserID()
+	userID := currentUserID(ctx)
+	if userID == 0 {
+		apiError(ctx, http.StatusUnauthorized, "Требуется авторизация")
+		return
+	}
 
 	if err := ctx.Request.ParseMultipartForm(50 << 20); err != nil && err != http.ErrNotMultipart {
 		apiError(ctx, http.StatusBadRequest, "Ошибка парсинга формы: "+err.Error())
@@ -129,7 +181,8 @@ func (h *Handler) CreateDraftScenarioAPI(ctx *gin.Context) {
 		ScenarioDescription: description,
 		BatteryDrainMah:     drainMah,
 		UsageDurationHours:  durationHours,
-		CreatedByUserID:     currentUserID,
+		// Создатель всегда берётся из JWT, а не из тела запроса.
+		CreatedByUserID: userID,
 	}
 
 	savedScenario, err := h.Repository.CreateOrUpdateDraftScenario(scenario)
@@ -200,8 +253,25 @@ func (h *Handler) CreateDraftScenarioAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, resp)
 }
 
+// PublishScenarioAPI godoc
+//
+//	@Summary		Опубликовать свой черновик
+//	@Description	Меняет статус draft → published. Доступно только создателю. Для гостя — 401.
+//	@Tags			scenarios
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int							true	"ID черновика"
+//	@Param			data	body		ds.ScenarioPublishRequest	true	"Описание и поля по теме"
+//	@Success		200		{object}	ds.ScenarioDraftDetailSerializer
+//	@Failure		400		{object}	ds.ErrorResponse
+//	@Failure		401		{object}	ds.ErrorResponse
+//	@Failure		403		{object}	ds.ErrorResponse
+//	@Failure		404		{object}	ds.ErrorResponse
+//	@Failure		409		{object}	ds.ErrorResponse
+//	@Router			/scenarios/{id}/publish [put]
 func (h *Handler) PublishScenarioAPI(ctx *gin.Context) {
-	currentUserID := singleton.GetCurrentUserID()
+	userID := currentUserID(ctx)
 
 	idStr := ctx.Param("id")
 	idVal, err := strconv.Atoi(idStr)
@@ -240,17 +310,32 @@ func (h *Handler) PublishScenarioAPI(ctx *gin.Context) {
 		return
 	}
 
-	publishedScenario, err := h.Repository.PublishScenarioAPI(uint(idVal), currentUserID, req)
+	publishedScenario, err := h.Repository.PublishScenarioAPI(uint(idVal), userID, req)
 	if err != nil {
-		apiError(ctx, http.StatusBadRequest, "Ошибка публикации сценария: "+err.Error())
+		writeRepoError(ctx, err, "Ошибка публикации сценария")
 		return
 	}
 
 	ctx.JSON(http.StatusOK, publishedScenario)
 }
 
+// DeleteScenarioAPI godoc
+//
+//	@Summary		Логически удалить услугу
+//	@Description	Меняет статус на deleted (SQL UPDATE, без каскадного удаления). Создатель удаляет свои услуги, модератор — любые.
+//	@Tags			scenarios
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		int	true	"ID услуги"
+//	@Success		200	{object}	ds.ScenarioDeleteResponse
+//	@Failure		400	{object}	ds.ErrorResponse
+//	@Failure		401	{object}	ds.ErrorResponse
+//	@Failure		403	{object}	ds.ErrorResponse
+//	@Failure		404	{object}	ds.ErrorResponse
+//	@Failure		409	{object}	ds.ErrorResponse
+//	@Router			/scenarios/{id} [delete]
 func (h *Handler) DeleteScenarioAPI(ctx *gin.Context) {
-	currentUserID := singleton.GetCurrentUserID()
+	userID := currentUserID(ctx)
 
 	idStr := ctx.Param("id")
 	idVal, err := strconv.Atoi(idStr)
@@ -259,19 +344,34 @@ func (h *Handler) DeleteScenarioAPI(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.Repository.SoftDeleteScenarioAPI(uint(idVal), currentUserID); err != nil {
-		apiError(ctx, http.StatusBadRequest, "Не удалось удалить сценарий: "+err.Error())
+	if err := h.Repository.SoftDeleteScenarioAPI(uint(idVal), userID, isModerator(ctx)); err != nil {
+		writeRepoError(ctx, err, "Не удалось удалить сценарий")
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "сценарий успешно удален",
-		"id":      uint(idVal),
+	ctx.JSON(http.StatusOK, ds.ScenarioDeleteResponse{
+		ID:      uint(idVal),
+		Message: "сценарий успешно удален",
 	})
 }
 
+// ToggleLikeAPI godoc
+//
+//	@Summary		Поставить или отменить лайк
+//	@Description	like=1 ставит лайк текущего пользователя, like=0 отменяет.
+//	@Tags			scenarios
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int						true	"ID услуги"
+//	@Param			like	body		ds.ScenarioLikeRequest	true	"1 — поставить, 0 — отменить"
+//	@Success		200		{object}	ds.ScenarioLikeResponse
+//	@Failure		400		{object}	ds.ErrorResponse
+//	@Failure		401		{object}	ds.ErrorResponse
+//	@Failure		404		{object}	ds.ErrorResponse
+//	@Router			/scenarios/{id}/like [post]
 func (h *Handler) ToggleLikeAPI(ctx *gin.Context) {
-	currentUserID := singleton.GetCurrentUserID()
+	userID := currentUserID(ctx)
 
 	idStr := ctx.Param("id")
 	idVal, err := strconv.Atoi(idStr)
@@ -293,9 +393,9 @@ func (h *Handler) ToggleLikeAPI(ctx *gin.Context) {
 		return
 	}
 
-	res, err := h.Repository.ToggleLikeAPI(currentUserID, uint(idVal), action)
+	res, err := h.Repository.ToggleLikeAPI(userID, uint(idVal), action)
 	if err != nil {
-		apiError(ctx, http.StatusBadRequest, "Ошибка обновления лайка: "+err.Error())
+		writeRepoError(ctx, err, "Ошибка обновления лайка")
 		return
 	}
 

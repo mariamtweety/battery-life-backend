@@ -179,6 +179,10 @@ func (r *Repository) GetPublishedScenariosAPI(currentUserID uint, filterTitle st
 	items := make([]ds.ScenarioListItemSerializer, 0, len(scenarios))
 	for _, s := range scenarios {
 		likesCount := r.GetLikesCount(s.ID)
+		isCreator := 0
+		if currentUserID != 0 && s.CreatedByUserID == currentUserID {
+			isCreator = 1
+		}
 
 		items = append(items, ds.ScenarioListItemSerializer{
 			ID:                 s.ID,
@@ -187,6 +191,8 @@ func (r *Repository) GetPublishedScenariosAPI(currentUserID uint, filterTitle st
 			BatteryDrainMah:    s.BatteryDrainMah,
 			UsageDurationHours: s.UsageDurationHours,
 			LikesCount:         likesCount,
+			IsLiked:            r.IsScenarioLikedByUser(currentUserID, s.ID),
+			IsCreator:          isCreator,
 		})
 	}
 
@@ -214,6 +220,10 @@ func (r *Repository) GetFeedScenarioAPI(currentUserID uint, id *uint, next bool)
 
 	isLiked := r.IsScenarioLikedByUser(currentUserID, scenario.ID)
 	likesCount := r.GetLikesCount(scenario.ID)
+	isCreator := 0
+	if currentUserID != 0 && scenario.CreatedByUserID == currentUserID {
+		isCreator = 1
+	}
 
 	return &ds.ScenarioFeedItemSerializer{
 		ID:                  scenario.ID,
@@ -224,6 +234,7 @@ func (r *Repository) GetFeedScenarioAPI(currentUserID uint, id *uint, next bool)
 		UsageDurationHours:  scenario.UsageDurationHours,
 		LikesCount:          likesCount,
 		IsLiked:             isLiked,
+		IsCreator:           isCreator,
 	}, nil
 }
 
@@ -305,23 +316,23 @@ func (r *Repository) PublishScenarioAPI(scenarioID uint, currentUserID uint, req
 	err := r.db.Where("id = ?", scenarioID).First(&scenario).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("сценарий с id %d не найден", scenarioID)
+			return nil, fmt.Errorf("%w: сценарий с id %d не найден", ErrNotFound, scenarioID)
 		}
 		return nil, err
 	}
 
 	if scenario.CreatedByUserID != currentUserID {
-		return nil, fmt.Errorf("нет прав: вы не являетесь создателем этого сценария")
+		return nil, fmt.Errorf("%w: вы не являетесь создателем этого сценария", ErrForbidden)
 	}
 
 	if scenario.ScenarioStatus == "published" {
-		return nil, fmt.Errorf("сценарий уже опубликован")
+		return nil, fmt.Errorf("%w: сценарий уже опубликован", ErrConflict)
 	}
 	if scenario.ScenarioStatus == "deleted" {
-		return nil, fmt.Errorf("нельзя опубликовать удаленный сценарий")
+		return nil, fmt.Errorf("%w: нельзя опубликовать удаленный сценарий", ErrConflict)
 	}
 	if scenario.ScenarioStatus != "draft" {
-		return nil, fmt.Errorf("сценарий не в статусе черновика (текущий статус: %s)", scenario.ScenarioStatus)
+		return nil, fmt.Errorf("%w: сценарий не в статусе черновика (текущий статус: %s)", ErrConflict, scenario.ScenarioStatus)
 	}
 
 	now := time.Now()
@@ -350,22 +361,22 @@ func (r *Repository) PublishScenarioAPI(scenarioID uint, currentUserID uint, req
 	}, nil
 }
 
-func (r *Repository) SoftDeleteScenarioAPI(scenarioID uint, currentUserID uint) error {
+func (r *Repository) SoftDeleteScenarioAPI(scenarioID uint, currentUserID uint, isModerator bool) error {
 	var scenario ds.BatteryScenario
 	err := r.db.Where("id = ?", scenarioID).First(&scenario).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("сценарий с id %d не найден", scenarioID)
+			return fmt.Errorf("%w: сценарий с id %d не найден", ErrNotFound, scenarioID)
 		}
 		return err
 	}
 
-	if scenario.CreatedByUserID != currentUserID {
-		return fmt.Errorf("нет прав: только создатель может удалить свой сценарий")
+	if scenario.CreatedByUserID != currentUserID && !isModerator {
+		return fmt.Errorf("%w: только создатель или модератор может удалить сценарий", ErrForbidden)
 	}
 
 	if scenario.ScenarioStatus == "deleted" {
-		return fmt.Errorf("сценарий с id %d уже удален", scenarioID)
+		return fmt.Errorf("%w: сценарий с id %d уже удален", ErrConflict, scenarioID)
 	}
 
 	return r.db.Model(&ds.BatteryScenario{}).Where("id = ?", scenarioID).Update("scenario_status", "deleted").Error
@@ -376,7 +387,7 @@ func (r *Repository) ToggleLikeAPI(userID uint, scenarioID uint, action int) (*d
 	err := r.db.Where("id = ? AND scenario_status != 'deleted'", scenarioID).First(&scenario).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("сценарий с id %d не найден или удален", scenarioID)
+			return nil, fmt.Errorf("%w: сценарий с id %d не найден или удален", ErrNotFound, scenarioID)
 		}
 		return nil, err
 	}

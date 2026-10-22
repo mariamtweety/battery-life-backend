@@ -10,19 +10,19 @@ import (
 	"gorm.io/gorm"
 )
 
-func (r *Repository) RegisterUser(username, password string, isModerator bool) (*ds.BatteryAppUser, error) {
+func (r *Repository) RegisterUser(username, passwordHash string, isModerator bool) (*ds.BatteryAppUser, error) {
 	var count int64
 	err := r.db.Model(&ds.BatteryAppUser{}).Where("username = ?", username).Count(&count).Error
 	if err != nil {
 		return nil, err
 	}
 	if count > 0 {
-		return nil, fmt.Errorf("пользователь с именем '%s' уже существует", username)
+		return nil, fmt.Errorf("%w: пользователь с именем '%s' уже существует", ErrConflict, username)
 	}
 
 	user := ds.BatteryAppUser{
 		Username:     username,
-		PasswordHash: password,
+		PasswordHash: passwordHash,
 		IsModerator:  isModerator,
 		CreatedAt:    time.Now(),
 	}
@@ -34,13 +34,34 @@ func (r *Repository) RegisterUser(username, password string, isModerator bool) (
 	return &user, nil
 }
 
+// GetUserByUsername возвращает пользователя для аутентификации.
+func (r *Repository) GetUserByUsername(username string) (*ds.BatteryAppUser, error) {
+	var user ds.BatteryAppUser
+	err := r.db.Where("username = ?", username).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("%w: пользователь с именем '%s' не найден", ErrNotFound, username)
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (r *Repository) GetUserByID(id uint) (*ds.BatteryAppUser, error) {
 	var user ds.BatteryAppUser
 	err := r.db.Where("id = ?", id).First(&user).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("%w: пользователь с id %d не найден", ErrNotFound, id)
+		}
 		return nil, err
 	}
 	return &user, nil
+}
+
+// UpdateUserPasswordHash обновляет хэш пароля (например, при переходе с ЛР3 на bcrypt).
+func (r *Repository) UpdateUserPasswordHash(id uint, passwordHash string) error {
+	return r.db.Model(&ds.BatteryAppUser{}).Where("id = ?", id).Update("password_hash", passwordHash).Error
 }
 
 func (r *Repository) GetUserScenarios(userID uint) (*ds.UserScenariosSerializer, error) {

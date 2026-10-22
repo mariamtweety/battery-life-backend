@@ -1,315 +1,403 @@
 {
-	"info": {
-		"_postman_id": "b3e9447d-2b45-4e78-98bb-5e60882e379a",
-		"name": "Battery Life REST API (ЛР3)",
-		"description": "Коллекция из 10 обязательных запросов для демонстрации Лабораторной работы №3 по теме 'Расчет времени автономной работы телефона'.\n\nВсе методы начинаются с префикса /api и следуют принципам REST без добавления 'status: success' в тело ответа.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "1. GET Список опубликованных сценариев с фильтром",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/api/scenarios?search=гейминг&max_hours=10",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"scenarios"
-					],
-					"query": [
-						{
-							"key": "search",
-							"value": "гейминг",
-							"description": "Фильтрация по названию сценария"
-						},
-						{
-							"key": "max_hours",
-							"value": "10",
-							"description": "Фильтрация по максимальной длительности (часы)"
-						}
-					]
-				},
-				"description": "Возвращает список только опубликованных сценариев с подсчетом лайков и признаком создателя is_creator (0 или 1)."
-			},
-			"response": []
-		},
-		{
-			"name": "2. POST Добавление нового сценария с картинкой и видео",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "scenario_title",
-							"value": "Навигация в пути",
-							"type": "text"
-						},
-						{
-							"key": "scenario_description",
-							"value": "Использование GPS-навигатора при поездках на авто",
-							"type": "text"
-						},
-						{
-							"key": "battery_drain_mah",
-							"value": "650",
-							"type": "text"
-						},
-						{
-							"key": "usage_duration_hours",
-							"value": "4.5",
-							"type": "text"
-						},
-						{
-							"key": "image",
-							"type": "file",
-							"src": []
-						},
-						{
-							"key": "video",
-							"type": "file",
-							"src": []
-						}
-					]
-				},
-				"url": {
-					"raw": "{{base_url}}/api/scenarios",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"scenarios"
-					]
-				},
-				"description": "Создает сценарий в статусе 'draft', загружает файлы изображения и видео в MinIO с латинскими именами и сохраняет URL в БД."
-			},
-			"response": []
-		},
-		{
-			"name": "3. GET Получение полей черновика пользователя",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/api/scenarios/draft",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"scenarios",
-						"draft"
-					]
-				},
-				"description": "Возвращает поля единственного черновика текущего пользователя (ID пользователя берется из singleton-функции, в URL не передается)."
-			},
-			"response": []
-		},
-		{
-			"name": "4. PUT Публикация сценария (смена статуса draft -> published)",
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"scenario_title\": \"GPS Навигация\",\n  \"scenario_description\": \"Точное ведение по маршруту в авто с постоянной активностью экрана и чипа GPS\",\n  \"battery_drain_mah\": 850,\n  \"usage_duration_hours\": 5.0\n}"
-				},
-				"url": {
-					"raw": "{{base_url}}/api/scenarios/{{scenario_id}}/publish",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"scenarios",
-						"{{scenario_id}}",
-						"publish"
-					]
-				},
-				"description": "Переводит сценарий из статуса 'draft' в 'published', фиксирует дату формирования formation_date. Изменить статус обратно в draft запрещено."
-			},
-			"response": []
-		},
-		{
-			"name": "5. GET Получение ленты по ID со следующим сценарием (?id=1&next=true)",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/api/scenarios/feed?id=1&next=true",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"scenarios",
-						"feed"
-					],
-					"query": [
-						{
-							"key": "id",
-							"value": "1",
-							"description": "ID сценария"
-						},
-						{
-							"key": "next",
-							"value": "true",
-							"description": "Переход к следующему сценарию"
-						}
-					]
-				},
-				"description": "Возвращает следующий по ID опубликованный сценарий после переданного ID (параметры id и next передаются в query)."
-			},
-			"response": []
-		},
-		{
-			"name": "6. POST Поставить / отменить лайк сценарию (поле like: 1 или 0)",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"like\": 1\n}"
-				},
-				"url": {
-					"raw": "{{base_url}}/api/scenarios/1/like",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"scenarios",
-						"1",
-						"like"
-					]
-				},
-				"description": "Ставит (1) или снимает (0) лайк от текущего пользователя singleton."
-			},
-			"response": []
-		},
-		{
-			"name": "7. DELETE Удаление сценария (soft delete)",
-			"request": {
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/api/scenarios/{{scenario_id}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"scenarios",
-						"{{scenario_id}}"
-					]
-				},
-				"description": "Логическое удаление сценария (статус переводится в 'deleted'). Разрешено только создателю сценария."
-			},
-			"response": []
-		},
-		{
-			"name": "8. POST Регистрация нового пользователя",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"username\": \"tester_dmitry\",\n  \"password\": \"secretpassword123\",\n  \"is_moderator\": false\n}"
-				},
-				"url": {
-					"raw": "{{base_url}}/api/users/register",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"users",
-						"register"
-					]
-				},
-				"description": "Регистрирует нового пользователя в таблице battery_app_users. Пароль не возвращается в ответе (json:\"-\")."
-			},
-			"response": []
-		},
-		{
-			"name": "9. POST Аутентификация пользователя (заглушка для ЛР4)",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"username\": \"tester_alex\",\n  \"password\": \"pass123\"\n}"
-				},
-				"url": {
-					"raw": "{{base_url}}/api/users/login",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"users",
-						"login"
-					]
-				},
-				"description": "Заглушка авторизации для ЛР4, возвращает сессионный токен и профиль пользователя."
-			},
-			"response": []
-		},
-		{
-			"name": "10. POST Деавторизация пользователя (заглушка для ЛР4)",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/api/users/logout",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"users",
-						"logout"
-					]
-				},
-				"description": "Заглушка деавторизации для ЛР4."
-			},
-			"response": []
-		}
-	],
-	"variable": [
-		{
-			"key": "base_url",
-			"value": "http://localhost:8080"
-		},
-		{
-			"key": "scenario_id",
-			"value": "1"
-		}
-	]
+  "info": {
+    "_postman_id": "b3e9447d-2b45-4e78-98bb-5e60882e379a",
+    "name": "Battery Life REST API (ЛР4)",
+    "description": "Коллекция для демонстрации ЛР4: JWT-аутентификация, публичное чтение, методы создателя, лайк и logout с blacklist в Redis.\n\nПорядок: Register → Login (токен сохраняется в переменную token) → публичные GET без токена → методы создателя с Bearer → Logout. После Logout повторный защищённый запрос должен вернуть 401.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Аутентификация (ЛР4)",
+      "item": [
+        {
+          "name": "Регистрация пользователя",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "register"
+              ]
+            },
+            "description": "01. Регистрация пользователя",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"lab4_user\",\n  \"password\": \"test1234\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Логин: получить JWT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "login"
+              ]
+            },
+            "description": "04. Аутентификация: получить JWT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"tester_alex\",\n  \"password\": \"pass123\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.access_token) { pm.collectionVariables.set('token', data.access_token); }",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Текущий пользователь",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            },
+            "description": "05. Текущий пользователь (Bearer)"
+          },
+          "response": []
+        },
+        {
+          "name": "Выход: JWT в blacklist Redis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "logout"
+              ]
+            },
+            "description": "11. Деавторизация: JWT в blacklist Redis"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02. Публичное чтение (без токена)",
+      "item": [
+        {
+          "name": "Список услуг с фильтром",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/scenarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scenarios"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Ретро",
+                  "description": "Фильтр по названию"
+                },
+                {
+                  "key": "max_hours",
+                  "value": "10",
+                  "description": "Максимальная длительность"
+                }
+              ]
+            },
+            "description": "02. Список услуг с фильтром"
+          },
+          "response": []
+        },
+        {
+          "name": "Лента: первая опубликованная услуга",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/scenarios/feed",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "feed"
+              ]
+            },
+            "description": "03. Лента: первая опубликованная услуга"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03. Методы создателя (Bearer)",
+      "item": [
+        {
+          "name": "Создание черновика (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/scenarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scenarios"
+              ]
+            },
+            "description": "06. Создание черновика (multipart)",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "scenario_title",
+                  "value": "Новый сценарий",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Получение полей черновика",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/scenarios/draft",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "draft"
+              ]
+            },
+            "description": "07. Получение полей черновика"
+          },
+          "response": []
+        },
+        {
+          "name": "Публикация черновика",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/scenarios/1/publish",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "1",
+                "publish"
+              ]
+            },
+            "description": "08. Публикация черновика",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scenario_description\": \"Описание сценария для публикации\",\n  \"battery_drain_mah\": 750,\n  \"usage_duration_hours\": 6.5\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Поставить / отменить лайк",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/scenarios/1/like",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "1",
+                "like"
+              ]
+            },
+            "description": "09. Поставить лайк",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"like\": 1\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Лента по id: следующий элемент",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/scenarios/feed/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "feed",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "next",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "10. Лента по id: следующий элемент"
+          },
+          "response": []
+        },
+        {
+          "name": "Логическое удаление услуги",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/scenarios/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scenarios",
+                "1"
+              ]
+            },
+            "description": "12. Логическое удаление услуги"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
 }

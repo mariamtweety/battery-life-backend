@@ -36,6 +36,17 @@ services:
       - minio-data:/data
     command: server /data --console-address ":9001"
 
+  redis:
+    image: redis:7-alpine
+    container_name: battery-life-redis-1
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass battery_redis
+    volumes:
+      - redis-data:/data
+
 volumes:
   postgres_data:
   minio-data:
+  redis-data:

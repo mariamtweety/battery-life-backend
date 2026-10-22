@@ -1,2 +1,16 @@
 ServiceHost = "0.0.0.0"
 ServicePort = 8080
+
+# Настройки JWT (ЛР4)
+[JWT]
+Token = "battery-life-dev-secret-change-me"
+ExpiresIn = "24h"
+
+# Настройки Redis (ЛР4): blacklist токенов и сессии
+[Redis]
+Host = "127.0.0.1"
+Port = 6379
+Password = "battery_redis"
+User = ""
+DialTimeout = "5s"
+ReadTimeout = "5s"

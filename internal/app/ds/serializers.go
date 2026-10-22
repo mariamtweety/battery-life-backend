@@ -7,6 +7,8 @@ type ScenarioListItemSerializer struct {
 	BatteryDrainMah    int     `json:"battery_drain_mah"`
 	UsageDurationHours float64 `json:"usage_duration_hours"`
 	LikesCount         int64   `json:"likes_count"`
+	IsLiked            int     `json:"is_liked"`
+	IsCreator          int     `json:"is_creator"`
 }
 
 type ScenarioFeedItemSerializer struct {
@@ -18,6 +20,7 @@ type ScenarioFeedItemSerializer struct {
 	UsageDurationHours  float64 `json:"usage_duration_hours"`
 	LikesCount          int64   `json:"likes_count"`
 	IsLiked             int     `json:"is_liked"`
+	IsCreator           int     `json:"is_creator"`
 }
 
 type ScenarioDraftResponse struct {
@@ -49,6 +52,11 @@ type ScenarioLikeResponse struct {
 	LikesCount int64 `json:"likes_count"`
 }
 
+type ScenarioDeleteResponse struct {
+	ID      uint   `json:"id" example:"1"`
+	Message string `json:"message" example:"сценарий успешно удален"`
+}
+
 type ScenarioLikeRequest struct {
 	Like int `json:"like"`
 }
@@ -61,18 +69,26 @@ type ScenarioPublishRequest struct {
 }
 
 type UserRegisterRequest struct {
-	Username    string `json:"username"`
-	Password    string `json:"password"`
-	IsModerator bool   `json:"is_moderator"`
+	Username string `json:"username" example:"tester_alex"`
+	Password string `json:"password" example:"pass123"`
 }
 
 type UserLoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" example:"tester_alex"`
+	Password string `json:"password" example:"pass123"`
 }
 
 type AuthResponse struct {
-	Message string          `json:"message"`
-	Token   string          `json:"token,omitempty"`
-	User    *BatteryAppUser `json:"user,omitempty"`
+	AccessToken string          `json:"access_token"`
+	TokenType   string          `json:"token_type" example:"Bearer"`
+	ExpiresIn   int64           `json:"expires_in" example:"86400"`
+	User        *BatteryAppUser `json:"user"`
+}
+
+type MessageResponse struct {
+	Message string `json:"message" example:"операция выполнена"`
+}
+
+type ErrorResponse struct {
+	Error string `json:"error" example:"описание ошибки"`
 }

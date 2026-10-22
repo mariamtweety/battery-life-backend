@@ -1,0 +1,547 @@
+basePath: /api
+definitions:
+  ds.AuthResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        example: 86400
+        type: integer
+      token_type:
+        example: Bearer
+        type: string
+      user:
+        $ref: '#/definitions/ds.BatteryAppUser'
+    type: object
+  ds.BatteryAppUser:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_moderator:
+        type: boolean
+      username:
+        type: string
+    type: object
+  ds.ErrorResponse:
+    properties:
+      error:
+        example: описание ошибки
+        type: string
+    type: object
+  ds.MessageResponse:
+    properties:
+      message:
+        example: операция выполнена
+        type: string
+    type: object
+  ds.ScenarioDeleteResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+      message:
+        example: сценарий успешно удален
+        type: string
+    type: object
+  ds.ScenarioDraftDetailSerializer:
+    properties:
+      battery_drain_mah:
+        type: integer
+      id:
+        type: integer
+      image_url:
+        type: string
+      scenario_description:
+        type: string
+      scenario_status:
+        type: string
+      scenario_title:
+        type: string
+      usage_duration_hours:
+        type: number
+      video_url:
+        type: string
+    type: object
+  ds.ScenarioDraftResponse:
+    properties:
+      id:
+        type: integer
+      image_url:
+        type: string
+      scenario_title:
+        type: string
+      video_url:
+        type: string
+    type: object
+  ds.ScenarioFeedItemSerializer:
+    properties:
+      battery_drain_mah:
+        type: integer
+      id:
+        type: integer
+      is_creator:
+        type: integer
+      is_liked:
+        type: integer
+      likes_count:
+        type: integer
+      scenario_description:
+        type: string
+      scenario_title:
+        type: string
+      usage_duration_hours:
+        type: number
+      video_url:
+        type: string
+    type: object
+  ds.ScenarioLikeRequest:
+    properties:
+      like:
+        type: integer
+    type: object
+  ds.ScenarioLikeResponse:
+    properties:
+      liked:
+        type: integer
+      likes_count:
+        type: integer
+      scenario_id:
+        type: integer
+    type: object
+  ds.ScenarioListItemSerializer:
+    properties:
+      battery_drain_mah:
+        type: integer
+      id:
+        type: integer
+      image_url:
+        type: string
+      is_creator:
+        type: integer
+      is_liked:
+        type: integer
+      likes_count:
+        type: integer
+      scenario_title:
+        type: string
+      usage_duration_hours:
+        type: number
+    type: object
+  ds.ScenarioPublishRequest:
+    properties:
+      battery_drain_mah:
+        type: integer
+      scenario_description:
+        type: string
+      scenario_title:
+        type: string
+      usage_duration_hours:
+        type: number
+    type: object
+  ds.UserLoginRequest:
+    properties:
+      password:
+        example: pass123
+        type: string
+      username:
+        example: tester_alex
+        type: string
+    type: object
+  ds.UserRegisterRequest:
+    properties:
+      password:
+        example: pass123
+        type: string
+      username:
+        example: tester_alex
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@battery-life.local
+    name: Battery Life API Support
+  description: |-
+    Бэкенд SPA «Battery Life». ЛР4: JWT-аутентификация, ролевая модель, blacklist токенов в Redis, Swagger.
+    Публичное чтение доступно без токена. Методы создателя требуют заголовок Authorization: Bearer <JWT>.
+  license:
+    name: AS IS (NO WARRANTY)
+  title: Battery Life API
+  version: "4.0"
+paths:
+  /scenarios:
+    get:
+      description: Доступно без авторизации. Если передан JWT, заполняются is_liked
+        и is_creator.
+      parameters:
+      - description: Фильтр по названию
+        in: query
+        name: search
+        type: string
+      - description: Максимальная длительность использования, ч
+        in: query
+        name: max_hours
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ds.ScenarioListItemSerializer'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      summary: Список опубликованных услуг
+      tags:
+      - scenarios
+    post:
+      consumes:
+      - multipart/form-data
+      description: Принимает multipart/form-data. Файлы image и video сохраняются
+        в MinIO, создатель берётся из JWT.
+      parameters:
+      - description: Название услуги (1-24 символа)
+        in: formData
+        name: scenario_title
+        type: string
+      - description: Изображение
+        in: formData
+        name: image
+        type: file
+      - description: Видео
+        in: formData
+        name: video
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ds.ScenarioDraftResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создать (или обновить) черновик услуги
+      tags:
+      - scenarios
+  /scenarios/{id}:
+    delete:
+      description: Меняет статус на deleted (SQL UPDATE, без каскадного удаления).
+        Создатель удаляет свои услуги, модератор — любые.
+      parameters:
+      - description: ID услуги
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.ScenarioDeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Логически удалить услугу
+      tags:
+      - scenarios
+  /scenarios/{id}/like:
+    post:
+      consumes:
+      - application/json
+      description: like=1 ставит лайк текущего пользователя, like=0 отменяет.
+      parameters:
+      - description: ID услуги
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 1 — поставить, 0 — отменить
+        in: body
+        name: like
+        required: true
+        schema:
+          $ref: '#/definitions/ds.ScenarioLikeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.ScenarioLikeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Поставить или отменить лайк
+      tags:
+      - scenarios
+  /scenarios/{id}/publish:
+    put:
+      consumes:
+      - application/json
+      description: Меняет статус draft → published. Доступно только создателю. Для
+        гостя — 401.
+      parameters:
+      - description: ID черновика
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Описание и поля по теме
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/ds.ScenarioPublishRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.ScenarioDraftDetailSerializer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Опубликовать свой черновик
+      tags:
+      - scenarios
+  /scenarios/draft:
+    get:
+      description: Возвращает единственный черновик авторизованного пользователя.
+        ID с клиента не принимается.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.ScenarioDraftDetailSerializer'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Черновик текущего пользователя
+      tags:
+      - scenarios
+  /scenarios/feed/{id}:
+    get:
+      description: Без id — первая опубликованная услуга. С id — услуга по id. С id
+        и next=true — следующая, с заворотом в начало ленты. Доступно без авторизации;
+        is_liked/is_creator заполняются при наличии JWT.
+      parameters:
+      - description: ID текущей услуги
+        in: path
+        name: id
+        type: integer
+      - description: Получить следующую услугу
+        in: query
+        name: next
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.ScenarioFeedItemSerializer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      summary: Лента услуг
+      tags:
+      - scenarios
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Проверяет пароль и выдаёт JWT. Токен также сохраняется в cookie
+        access_token.
+      parameters:
+      - description: Логин и пароль
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/ds.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      summary: Аутентификация по логину и паролю
+      tags:
+      - auth
+  /users/logout:
+    post:
+      description: Добавляет JWT в blacklist Redis до истечения токена и удаляет сессию.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Деавторизация
+      tags:
+      - auth
+  /users/me:
+    get:
+      description: Возвращает пользователя, которому принадлежит переданный JWT.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.BatteryAppUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Текущий пользователь
+      tags:
+      - users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт пользователя. Роль назначается на бэкенде (user), is_moderator
+        с клиента не принимается.
+      parameters:
+      - description: Логин и пароль
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/ds.UserRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ds.BatteryAppUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      summary: Регистрация пользователя
+      tags:
+      - users
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Введите "Bearer " и JWT, полученный в POST /api/users/login.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
